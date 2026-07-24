@@ -1,0 +1,10 @@
+.link {
+  font-family: var(--ts-font-mono);
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  color: var(--ts-accent);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

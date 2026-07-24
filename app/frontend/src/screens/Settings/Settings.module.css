@@ -1,0 +1,82 @@
+.label {
+  margin: 22px 0 8px;
+  font-size: 13.5px;
+  color: var(--ts-hint);
+}
+
+.labelFirst {
+  margin: 18px 0 8px;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 34px;
+  padding: 13px 15px;
+  background: var(--ts-card);
+  border-radius: var(--ts-radius-group);
+}
+
+.avatar {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--ts-accent);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  object-fit: cover;
+}
+
+.accountInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.accountName {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ts-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountUser {
+  font-size: 13px;
+  color: var(--ts-hint);
+}
+
+.logoutBtn {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 59, 48, 0.14);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.loginWrap {
+  margin-top: 34px;
+}
+
+.loginHint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ts-hint);
+}

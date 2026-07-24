@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: ./app
+      args:
+        VITE_TG_CLIENT_ID: ${TG_CLIENT_ID}
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file: .env
+    volumes:
+      - ./app/backend/data:/backend/backend/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -1,0 +1,18 @@
+.button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  border: none;
+  border-radius: var(--ts-radius-field);
+  background: var(--ts-card);
+  color: var(--ts-accent);
+  font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.button:active {
+  transform: scale(0.98);
+}
