@@ -90,6 +90,8 @@ export const GLYPHS = {
   lock: { s: 2, inner: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>' },
   eye: { s: 2, inner: '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>' },
   check: { s: 2.6, inner: '<path d="M5 13l4 4L19 7"/>' },
+  chevron: { s: 2.2, inner: '<path d="M9 6l6 6-6 6"/>' },
+  external: { s: 2, inner: '<path d="M8 16 16 8"/><path d="M9 8h7v7"/>' },
   copy: {
     s: 2,
     inner: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',

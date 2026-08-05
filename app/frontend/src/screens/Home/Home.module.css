@@ -346,37 +346,6 @@
   cursor: pointer;
 }
 
-.footer {
-  margin-top: auto;
-  padding-top: 40px;
-}
-
-.footerLinks {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px 18px;
-}
-
-.footerLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--ts-hint);
-  text-decoration: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.footerMark {
-  flex: none;
-  display: block;
-}
-
-.footerLink:active {
-  opacity: 0.6;
-}
-
 
 .fab {
   position: absolute;

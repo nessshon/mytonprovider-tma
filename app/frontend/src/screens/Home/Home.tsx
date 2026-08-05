@@ -25,7 +25,7 @@ import { TonLogo } from "./TonLogo";
 
 const RELOAD_SPIN_MS = 1100;
 const SCROLL_TOP_THRESHOLD = 360;
-const FOOTER_SAFE_ZONE = 120;
+const BOTTOM_SAFE_ZONE = 120;
 const SKELETON_MIN = 3;
 const LIST_SKELETON_MIN = 6;
 const CELL_COUNT = 6;
@@ -108,7 +108,7 @@ export function Home() {
 
   const onScroll = (event: UIEvent<HTMLDivElement>) => {
     const { scrollTop, clientHeight, scrollHeight } = event.currentTarget;
-    const atBottom = scrollTop + clientHeight > scrollHeight - FOOTER_SAFE_ZONE;
+    const atBottom = scrollTop + clientHeight > scrollHeight - BOTTOM_SAFE_ZONE;
     setShowTop(scrollTop > SCROLL_TOP_THRESHOLD && !atBottom);
   };
 
@@ -327,35 +327,6 @@ export function Home() {
         )}
 
         {!showSkeleton && !isSubsTab && items.length > visible && <LoadMore onClick={loadMore} />}
-
-        <div className={styles.footer}>
-          <div className={styles.footerLinks}>
-            <a
-              className={styles.footerLink}
-              href="https://github.com/igroman787/mytonprovider"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <TonLogo size={17} disc="var(--ts-hint)" mark="var(--ts-bg)" />
-              {t.becomeProvider}
-            </a>
-            <a
-              className={styles.footerLink}
-              href="https://t.me/mytonprovider_chat"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <svg className={styles.footerMark} viewBox="0 0 240 240" width={17} height={17}>
-                <circle cx="120" cy="120" r="120" fill="var(--ts-hint)" />
-                <path
-                  fill="var(--ts-bg)"
-                  d="M53.2 118.8c34.9-15.2 58.2-25.2 69.8-30.1 33.2-13.8 40.1-16.2 44.6-16.3 1 0 3.2.2 4.7 1.4 1.2 1 1.5 2.3 1.7 3.3.2 1 .4 3.1.2 4.8-1.8 19.3-9.7 66.1-13.7 87.7-1.7 9.1-5 12.2-8.2 12.5-7 .6-12.3-4.6-19-9-10.5-6.9-16.5-11.2-26.7-17.9-11.8-7.8-4.2-12.1 2.6-19.1 1.8-1.8 32.5-29.8 33.1-32.3.1-.3.1-1.5-.6-2.1-.7-.6-1.7-.4-2.4-.2-1 .2-17.1 10.9-48.2 32-4.6 3.1-8.7 4.7-12.4 4.6-4.1-.1-11.9-2.3-17.8-4.2-7.2-2.3-12.9-3.5-12.4-7.4.3-2 3.1-4.1 8.7-6.7z"
-                />
-              </svg>
-              {t.support}
-            </a>
-          </div>
-        </div>
       </div>
 
       <button

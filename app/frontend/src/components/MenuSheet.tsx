@@ -96,16 +96,54 @@ export function MenuSheet({ onClose }: { onClose: () => void }) {
             onChange={setExplorer}
           />
 
-          <button
-            type="button"
-            className={styles.row}
-            onClick={() => {
-              onClose();
-              navigate("/bags");
-            }}
-          >
-            {t.explorerTitle}
-          </button>
+          <div className={styles.group}>
+            <button
+              type="button"
+              className={styles.row}
+              onClick={() => {
+                onClose();
+                navigate("/bags");
+              }}
+            >
+              <span className={styles.tile}>
+                <Icon glyph="search" size={17} color="var(--ts-on-accent)" />
+              </span>
+              {t.explorerTitle}
+              <span className={styles.tail}>
+                <Icon glyph="chevron" size={16} color="var(--ts-hint)" />
+              </span>
+            </button>
+            <a
+              className={styles.row}
+              href="https://github.com/igroman787/mytonprovider"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onClose}
+            >
+              <span className={styles.tile}>
+                <Icon glyph="server" size={17} color="var(--ts-on-accent)" />
+              </span>
+              {t.becomeProvider}
+              <span className={styles.tail}>
+                <Icon glyph="external" size={15} color="var(--ts-hint)" />
+              </span>
+            </a>
+            <a
+              className={styles.row}
+              href="https://t.me/mytonprovider_chat"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onClose}
+            >
+              <span className={styles.tile}>
+                <Icon glyph="telegram" size={17} color="var(--ts-on-accent)" />
+              </span>
+              {t.support}
+              <span className={styles.tail}>
+                <Icon glyph="external" size={15} color="var(--ts-hint)" />
+              </span>
+            </a>
+          </div>
         </>
       )}
     </BottomSheet>
