@@ -8,6 +8,8 @@ from app.db.models import ProviderHistoryModel, ProviderModel, UTCDateTime
 from app.db.repos._base import BaseRepo
 from app.utils import utcnow
 
+BOUND_REACH = 0.03
+
 
 class ProviderRepo(BaseRepo[ProviderModel]):
     model = ProviderModel
@@ -22,11 +24,13 @@ class ProviderHistoryRepo(BaseRepo[ProviderHistoryModel]):
         start: datetime,
         end: datetime | None = None,
     ) -> tuple[ProviderHistoryModel | None, ProviderHistoryModel | None]:
-        first = await self._nearest(pubkey, start)
-        last = await self._nearest(pubkey, end if end is not None else utcnow())
+        finish = end if end is not None else utcnow()
+        reach = (finish - start) * BOUND_REACH
+        first = await self._nearest(pubkey, start, reach)
+        last = await self._nearest(pubkey, finish, reach)
         return first, last
 
-    async def _nearest(self, pubkey: str, moment: datetime) -> ProviderHistoryModel | None:
+    async def _nearest(self, pubkey: str, moment: datetime, reach: timedelta) -> ProviderHistoryModel | None:
         stmt = select(ProviderHistoryModel).where(ProviderHistoryModel.pubkey == pubkey)
         before = await self.session.execute(
             stmt.where(ProviderHistoryModel.archived_at <= moment)
@@ -38,7 +42,11 @@ class ProviderHistoryRepo(BaseRepo[ProviderHistoryModel]):
             .order_by(ProviderHistoryModel.archived_at.asc())
             .limit(1)
         )
-        rows = [row for row in (before.scalar_one_or_none(), after.scalar_one_or_none()) if row is not None]
+        earlier = before.scalar_one_or_none()
+        later = after.scalar_one_or_none()
+        if earlier is not None and later is not None and moment - earlier.archived_at > reach:
+            return later
+        rows = [row for row in (earlier, later) if row is not None]
         if not rows:
             return None
         return min(rows, key=lambda row: abs(row.archived_at - moment))
