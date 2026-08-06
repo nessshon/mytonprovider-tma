@@ -22,15 +22,26 @@ class ProviderHistoryRepo(BaseRepo[ProviderHistoryModel]):
         start: datetime,
         end: datetime | None = None,
     ) -> tuple[ProviderHistoryModel | None, ProviderHistoryModel | None]:
-        stmt = select(ProviderHistoryModel).where(
-            ProviderHistoryModel.pubkey == pubkey,
-            ProviderHistoryModel.archived_at >= start,
+        first = await self._nearest(pubkey, start)
+        last = await self._nearest(pubkey, end if end is not None else utcnow())
+        return first, last
+
+    async def _nearest(self, pubkey: str, moment: datetime) -> ProviderHistoryModel | None:
+        stmt = select(ProviderHistoryModel).where(ProviderHistoryModel.pubkey == pubkey)
+        before = await self.session.execute(
+            stmt.where(ProviderHistoryModel.archived_at <= moment)
+            .order_by(ProviderHistoryModel.archived_at.desc())
+            .limit(1)
         )
-        if end is not None:
-            stmt = stmt.where(ProviderHistoryModel.archived_at < end)
-        first = await self.session.execute(stmt.order_by(ProviderHistoryModel.archived_at.asc()).limit(1))
-        last = await self.session.execute(stmt.order_by(ProviderHistoryModel.archived_at.desc()).limit(1))
-        return first.scalar_one_or_none(), last.scalar_one_or_none()
+        after = await self.session.execute(
+            stmt.where(ProviderHistoryModel.archived_at > moment)
+            .order_by(ProviderHistoryModel.archived_at.asc())
+            .limit(1)
+        )
+        rows = [row for row in (before.scalar_one_or_none(), after.scalar_one_or_none()) if row is not None]
+        if not rows:
+            return None
+        return min(rows, key=lambda row: abs(row.archived_at - moment))
 
     async def previous(self, pubkey: str) -> ProviderHistoryModel | None:
         stmt = (
