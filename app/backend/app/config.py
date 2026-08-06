@@ -20,7 +20,6 @@ TG_CLIENT_SECRET = env.str("TG_CLIENT_SECRET")
 
 BOT_TOKEN = env.str("BOT_TOKEN")
 BOT_DEV_IDS = env.list("BOT_DEV_IDS", [], subcast=int)
-BOT_BACKUP_ID = env.int("BOT_BACKUP_ID", 0)
 BOT_ADMIN_IDS = env.list("BOT_ADMIN_IDS", [], subcast=int)
 BOT_USERNAME = env.str("BOT_USERNAME")
 BOT_WEBHOOK_SECRET = env.str("BOT_WEBHOOK_SECRET")

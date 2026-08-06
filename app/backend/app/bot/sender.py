@@ -3,7 +3,7 @@ from collections.abc import Awaitable, Callable
 from typing import Literal
 
 from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError, TelegramRetryAfter
-from aiogram.types import FSInputFile, InputRichMessage, LinkPreviewOptions
+from aiogram.types import InputRichMessage, LinkPreviewOptions
 
 from app.bot import bot, logger
 
@@ -44,13 +44,5 @@ async def send_rich_message(user_id: int, rich_message: InputRichMessage, max_re
     return await _send(
         user_id,
         lambda: bot.send_rich_message(chat_id=user_id, rich_message=rich_message),
-        max_retries,
-    )
-
-
-async def send_document(user_id: int, document: FSInputFile, caption: str, max_retries: int = 3) -> Result:
-    return await _send(
-        user_id,
-        lambda: bot.send_document(chat_id=user_id, document=document, caption=caption),
         max_retries,
     )

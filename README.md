@@ -33,8 +33,7 @@ The frontend is compiled into the backend's static directory, migrations run, an
 ### Backups
 
 Once a day the app writes a compacted snapshot of the database to `app/backend/data/backups/` and keeps the
-last 14. The snapshot is taken while the app keeps writing, so it needs no downtime. With `BOT_BACKUP_ID` set,
-a gzipped copy also goes to that Telegram account, which keeps a copy off the host.
+last 14. The snapshot is taken while the app keeps writing, so it needs no downtime.
 
 To restore, stop the app, put a snapshot in place of `database.sqlite`, delete the `-wal` and `-shm` files
 next to it, and start again.
@@ -87,7 +86,6 @@ app authenticates through the Telegram Login Widget.
 | `BOT_USERNAME`          | Bot username, without `@`                                              | `mytonproviderbot`        |
 | `BOT_WEBHOOK_SECRET`    | Secret guarding the webhook endpoint                                   | `s3cret`                  |
 | `BOT_DEV_IDS`           | Telegram user IDs receiving worker error reports; empty disables       | `123,456`                 |
-| `BOT_BACKUP_ID`         | Telegram user ID receiving daily database snapshots; `0` disables      | `123`                     |
 | `BOT_ADMIN_IDS`         | Telegram user IDs granted admin access                                 | `123,456`                 |
 | `JWT_SECRET`            | Session-token signing key (≥ 32 bytes)                                 | `a-long-random-string`    |
 | `TG_CLIENT_ID`          | Telegram Login Widget client ID (OIDC)                                 | `123456789`               |

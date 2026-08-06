@@ -1,28 +1,14 @@
-import asyncio
-import gzip
 import logging
-import shutil
 from datetime import datetime, timezone
-from pathlib import Path
 
-from aiogram.types import FSInputFile
 from sqlalchemy import text
 
-from app import config
-from app.bot import sender
 from app.db import db_dir, engine
 from app.workers._base import BaseWorker
 
 logger = logging.getLogger(__name__)
 
 SNAPSHOT_LIMIT = 14
-
-
-def _archive(path: Path) -> Path:
-    archive = path.with_name(f"{path.name}.gz")
-    with path.open("rb") as raw, gzip.open(archive, "wb") as packed:
-        shutil.copyfileobj(raw, packed)
-    return archive
 
 
 class DbBackupWorker(BaseWorker):
@@ -44,10 +30,3 @@ class DbBackupWorker(BaseWorker):
             old.unlink()
 
         logger.debug("backed up %s: %d bytes, removed %d", path.name, path.stat().st_size, len(stale))
-
-        if config.BOT_BACKUP_ID:
-            archive = await asyncio.to_thread(_archive, path)
-            try:
-                await sender.send_document(config.BOT_BACKUP_ID, FSInputFile(archive), path.name)
-            finally:
-                archive.unlink(missing_ok=True)
