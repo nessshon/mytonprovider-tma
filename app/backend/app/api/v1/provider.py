@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Literal, TypeAlias
+from typing import Any, Literal, TypeAlias
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
+from sqlalchemy import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.alerts import disk_space_percent, evaluate, net_load_percent
@@ -24,12 +25,8 @@ PERIODS = {
     "month": timedelta(days=30),
 }
 
-CHART_BUCKET_SEC = {
-    "hour": 60,
-    "day": 30 * 60,
-    "week": 3 * 60 * 60,
-    "month": 12 * 60 * 60,
-}
+CHART_WINDOW = timedelta(hours=24)
+CHART_BUCKET_SEC = 15 * 60
 
 
 class TriggerOut(BaseModel):
@@ -74,14 +71,21 @@ class ProviderResponse(BaseModel):
 
 class ChartPoint(BaseModel):
     t: int
-    cpu: float | None
-    ram: float | None
-    net_mbps: float | None
-    disk: float | None
+    cpu: float | None = None
+    cpu_max: float | None = None
+    ram: float | None = None
+    ram_max: float | None = None
+    net_mbps: float | None = None
+    net_max: float | None = None
+    disk: float | None = None
+    disk_max: float | None = None
 
 
 class StatsResponse(BaseModel):
     summary: SummaryOut
+
+
+class ChartResponse(BaseModel):
     points: list[ChartPoint]
 
 
@@ -192,21 +196,45 @@ async def provider_stats(
     access: OwnerAccess = Depends(require_access),
     session: AsyncSession = Depends(get_session),
 ) -> StatsResponse:
-    key = access.provider.pubkey
     since = utcnow() - PERIODS[period]
-    summary = await period_summary(session, key, since)
-    rows = await ProviderHistoryRepo(session).charts(key, since, CHART_BUCKET_SEC[period])
-    points = [
-        ChartPoint(
-            t=int(row.archived_at.timestamp()),
-            cpu=row.cpu_load_percent,
-            ram=row.ram_load_percent,
-            net_mbps=row.net_mbps,
-            disk=row.disk_load_percent,
-        )
-        for row in rows
-    ]
-    return StatsResponse(summary=summary, points=points)
+    summary = await period_summary(session, access.provider.pubkey, since)
+    return StatsResponse(summary=summary)
+
+
+@router.get("/{pubkey}/chart")
+async def provider_chart(
+    access: OwnerAccess = Depends(require_access),
+    session: AsyncSession = Depends(get_session),
+) -> ChartResponse:
+    now = utcnow()
+    since = now - CHART_WINDOW
+    rows = await ProviderHistoryRepo(session).charts(access.provider.pubkey, since, CHART_BUCKET_SEC)
+    buckets = {row.bucket: row for row in rows}
+    first = int(since.timestamp()) // CHART_BUCKET_SEC
+    last = int(now.timestamp()) // CHART_BUCKET_SEC
+    points = [_chart_point(bucket, buckets.get(bucket)) for bucket in range(first, last + 1)]
+    return ChartResponse(points=points)
+
+
+def _chart_point(bucket: int, row: Row[Any] | None) -> ChartPoint:
+    at = bucket * CHART_BUCKET_SEC
+    if row is None:
+        return ChartPoint(t=at)
+    return ChartPoint(
+        t=at,
+        cpu=_rounded(row.cpu),
+        cpu_max=_rounded(row.cpu_max),
+        ram=_rounded(row.ram),
+        ram_max=_rounded(row.ram_max),
+        net_mbps=_rounded(row.net),
+        net_max=_rounded(row.net_max),
+        disk=_rounded(row.disk),
+        disk_max=_rounded(row.disk_max),
+    )
+
+
+def _rounded(value: float | None) -> float | None:
+    return round(value, 1) if value is not None else None
 
 
 @router.get("/{pubkey}/bags/problems")

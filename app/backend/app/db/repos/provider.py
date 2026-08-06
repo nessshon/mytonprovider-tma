@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import Float, Row, bindparam, select, text
+from sqlalchemy import Float, Integer, Row, bindparam, select, text
 
 from app.db.models import ProviderHistoryModel, ProviderModel, UTCDateTime
 from app.db.repos._base import BaseRepo
@@ -46,27 +46,28 @@ class ProviderHistoryRepo(BaseRepo[ProviderHistoryModel]):
     async def charts(self, pubkey: str, since: datetime, bucket_sec: int) -> Sequence[Row[Any]]:
         stmt = (
             text("""
-        SELECT archived_at, cpu_load_percent, ram_load_percent, net_mbps, disk_load_percent
-        FROM (
-          SELECT
-            archived_at, cpu_load_percent, ram_load_percent, net_mbps, disk_load_percent,
-            ROW_NUMBER() OVER (
-              PARTITION BY CAST(strftime('%s', archived_at) AS INTEGER) / :bucket
-              ORDER BY archived_at DESC
-            ) AS row_number
-          FROM providers_history
-          WHERE pubkey = :pubkey AND archived_at >= :since
-        )
-        WHERE row_number = 1
-        ORDER BY archived_at
+        SELECT
+          CAST(strftime('%s', archived_at) AS INTEGER) / :bucket AS bucket,
+          AVG(cpu_load_percent) AS cpu, MAX(cpu_load_percent) AS cpu_max,
+          AVG(ram_load_percent) AS ram, MAX(ram_load_percent) AS ram_max,
+          AVG(net_mbps) AS net, MAX(net_mbps) AS net_max,
+          AVG(disk_load_percent) AS disk, MAX(disk_load_percent) AS disk_max
+        FROM providers_history
+        WHERE pubkey = :pubkey AND archived_at >= :since
+        GROUP BY bucket
+        ORDER BY bucket
         """)
             .bindparams(bindparam("since", type_=UTCDateTime()))
             .columns(
-                archived_at=UTCDateTime(),
-                cpu_load_percent=Float(),
-                ram_load_percent=Float(),
-                net_mbps=Float(),
-                disk_load_percent=Float(),
+                bucket=Integer(),
+                cpu=Float(),
+                cpu_max=Float(),
+                ram=Float(),
+                ram_max=Float(),
+                net=Float(),
+                net_max=Float(),
+                disk=Float(),
+                disk_max=Float(),
             )
         )
         params = {"pubkey": pubkey, "since": since, "bucket": bucket_sec}
@@ -75,7 +76,6 @@ class ProviderHistoryRepo(BaseRepo[ProviderHistoryModel]):
 
     async def rollup(self) -> int:
         tiers = (
-            (timedelta(hours=1), 30 * 60),
             (timedelta(days=1), 3 * 60 * 60),
             (timedelta(days=7), 12 * 60 * 60),
             (timedelta(days=30), 24 * 60 * 60),
