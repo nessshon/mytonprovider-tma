@@ -35,9 +35,8 @@ export function OwnerPanel({ provider, pubkey, children }: { provider: Provider;
 
   const [tab, setTab] = useState<OwnerTab>("overview");
   const [period, setPeriod] = useState<OwnerPeriod>("today");
-  const [chartPeriod, setChartPeriod] = useState<OwnerPeriod>("today");
 
-  const { payload, denied, failed, refreshing } = useOwnerData(pubkey, loggedIn, period, chartPeriod);
+  const { payload, denied, failed, refreshing } = useOwnerData(pubkey, loggedIn, period);
   useEffect(() => {
     if (loggedIn) prefetchOwner(pubkey);
   }, [pubkey, loggedIn]);
@@ -172,11 +171,12 @@ export function OwnerPanel({ provider, pubkey, children }: { provider: Provider;
             ))}
           </div>
           <div className={styles.chartCard}>
-            <PeriodSegment value={chartPeriod} onChange={setChartPeriod} t={t} />
+            <div className={styles.chartWindow}>{t.chartWindow}</div>
             {owner.charts.map((chart) => (
               <Chart
                 key={chart.key}
                 values={chart.values}
+                peaks={chart.peaks}
                 times={chart.times}
                 threshold={chart.threshold}
                 unit={chart.unit}

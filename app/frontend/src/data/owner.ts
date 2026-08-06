@@ -24,7 +24,8 @@ interface OwnerGaugeData {
 
 interface OwnerChartData {
   key: GaugeKey;
-  values: number[];
+  values: (number | null)[];
+  peaks: (number | null)[];
   times: number[];
   threshold: number | null;
   unit: string;
@@ -103,9 +104,26 @@ function gaugeValues(payload: OwnerPayload): Record<GaugeKey, number | null> {
   };
 }
 
-function chartValue(point: OwnerChartPoint, key: GaugeKey): number {
-  const value = key === "cpu_high" ? point.cpu : key === "ram_high" ? point.ram : point.disk;
-  return Math.max(0, Math.round(value ?? 0));
+const CHART_FIELDS: Record<GaugeKey, [keyof OwnerChartPoint, keyof OwnerChartPoint]> = {
+  cpu_high: ["cpu", "cpu_max"],
+  ram_high: ["ram", "ram_max"],
+  disk_load_high: ["disk", "disk_max"],
+  network_high: ["net_mbps", "net_max"],
+};
+
+function chartValue(point: OwnerChartPoint, field: keyof OwnerChartPoint, digits: number): number | null {
+  const value = point[field];
+  if (value === null) return null;
+  const factor = 10 ** digits;
+  return Math.max(0, Math.round(value * factor) / factor);
+}
+
+function lastValue(values: (number | null)[]): number | null {
+  for (let index = values.length - 1; index >= 0; index--) {
+    const value = values[index];
+    if (value !== null) return value;
+  }
+  return null;
 }
 
 function threshold(thresholds: ThresholdMap, key: GaugeKey): number {
@@ -151,26 +169,21 @@ export function adaptOwner(p: Provider, payload: OwnerPayload, thresholds: Thres
       threshold: threshold(thresholds, key),
     })),
     charts: GAUGE_KEYS.map((key) => {
-      const times = payload.chart.map((point) => point.t);
-      if (key === "network_high") {
-        const values = payload.chart.map((point) => Math.max(0, Math.round((point.net_mbps ?? 0) * 10) / 10));
-        return {
-          key,
-          values,
-          times,
-          threshold: null,
-          unit: " Mbit/s",
-          current: values.length ? `${values[values.length - 1]} Mbit/s` : EMPTY,
-        };
-      }
-      const values = payload.chart.map((point) => chartValue(point, key));
+      const network = key === "network_high";
+      const [field, peakField] = CHART_FIELDS[key];
+      const digits = network ? 1 : 0;
+      const unit = network ? " Mbit/s" : "%";
+      const values = payload.chart.map((point) => chartValue(point, field, digits));
+      const peaks = payload.chart.map((point) => chartValue(point, peakField, digits));
+      const current = lastValue(values);
       return {
         key,
         values,
-        times,
-        threshold: threshold(thresholds, key),
-        unit: "%",
-        current: values.length ? `${values[values.length - 1]}%` : EMPTY,
+        peaks,
+        times: payload.chart.map((point) => point.t),
+        threshold: network ? null : threshold(thresholds, key),
+        unit,
+        current: current !== null ? `${current}${unit}` : EMPTY,
       };
     }),
   };

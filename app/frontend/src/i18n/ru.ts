@@ -124,6 +124,7 @@ export const ru: Dict = {
   viewInExplorer: "Открыть в эксплорере",
   lastOnline: "Последний онлайн",
   telemetryField: "Последняя телеметрия",
+  chartWindow: "За последние 24 часа",
   periodHour: "Час",
   periodDay: "День",
   periodWeek: "Неделя",

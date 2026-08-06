@@ -9,7 +9,8 @@ const PAD = 4;
 const TWO_DAYS_SEC = 172800;
 
 interface ChartProps {
-  values: number[];
+  values: (number | null)[];
+  peaks: (number | null)[];
   times: number[];
   threshold: number | null;
   unit: string;
@@ -29,12 +30,17 @@ function timeLabel(unixSec: number, spanSec: number): string {
   return `${pad2(date.getDate())}.${pad2(date.getMonth() + 1)} ${clock}`;
 }
 
-export function Chart({ values, times, threshold, unit, label, current, loading }: ChartProps) {
+export function Chart({ values, peaks, times, threshold, unit, label, current, loading }: ChartProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const clipId = useId();
   const [scrub, setScrub] = useState<number | null>(null);
 
-  if (loading || !values.length) {
+  const filled: number[] = [];
+  values.forEach((value, index) => {
+    if (value !== null) filled.push(index);
+  });
+
+  if (loading || !filled.length) {
     return (
       <div className={styles.chart}>
         <div className={styles.head}>
@@ -47,19 +53,35 @@ export function Chart({ values, times, threshold, unit, label, current, loading 
   }
 
   const count = values.length;
-  const x = (i: number) => PAD + (count > 1 ? (i / (count - 1)) * (WIDTH - 2 * PAD) : (WIDTH - 2 * PAD) / 2);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const value = (index: number) => values[index] as number;
+  const peak = (index: number) => peaks[index] ?? value(index);
+  const min = Math.min(...filled.map(value));
+  const max = Math.max(...filled.map(peak));
   const lo = threshold != null ? Math.min(min, threshold) : min;
   const hi = threshold != null ? Math.max(max, threshold) : max;
   const span = hi - lo || 1;
+  const x = (i: number) => PAD + (count > 1 ? (i / (count - 1)) * (WIDTH - 2 * PAD) : (WIDTH - 2 * PAD) / 2);
   const y = (v: number) => HEIGHT - PAD - ((v - lo) / span) * (HEIGHT - 2 * PAD);
+  const at = (index: number) => `${x(index).toFixed(1)},${y(value(index)).toFixed(1)}`;
+  const atPeak = (index: number) => `${x(index).toFixed(1)},${y(peak(index)).toFixed(1)}`;
 
-  const points = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`);
-  const areaPath = `M${points[0]} ${points
-    .slice(1)
-    .map((point) => `L${point}`)
-    .join(" ")} L${(WIDTH - PAD).toFixed(1)},${HEIGHT} L${PAD.toFixed(1)},${HEIGHT} Z`;
+  const runs: number[][] = [];
+  for (const index of filled) {
+    const run = runs[runs.length - 1];
+    if (run && index - run[run.length - 1] === 1) run.push(index);
+    else runs.push([index]);
+  }
+  const lines = runs.filter((run) => run.length > 1);
+  const dots = runs.filter((run) => run.length === 1).map((run) => run[0]);
+  const bridges = filled.slice(1).flatMap((index, position) => {
+    const previous = filled[position];
+    return index - previous > 1 ? [[previous, index]] : [];
+  });
+
+  const areaPath = lines
+    .map((run) => `M${run.map(at).join(" L")} L${x(run[run.length - 1]).toFixed(1)},${HEIGHT} L${x(run[0]).toFixed(1)},${HEIGHT} Z`)
+    .join(" ");
+  const peakPath = lines.map((run) => `M${run.map(atPeak).join(" L")} L${[...run].reverse().map(at).join(" L")} Z`).join(" ");
 
   const thresholdY = threshold != null ? y(threshold) : 0;
   const thresholdLine =
@@ -71,7 +93,8 @@ export function Chart({ values, times, threshold, unit, label, current, loading 
     const rect = wrapRef.current?.getBoundingClientRect();
     if (!rect || count < 2) return null;
     const ratio = (event.clientX - rect.left) / rect.width;
-    return Math.max(0, Math.min(count - 1, Math.round(ratio * (count - 1))));
+    const target = Math.max(0, Math.min(count - 1, Math.round(ratio * (count - 1))));
+    return filled.reduce((best, index) => (Math.abs(index - target) < Math.abs(best - target) ? index : best));
   };
 
   const moveScrub = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -91,10 +114,8 @@ export function Chart({ values, times, threshold, unit, label, current, loading 
   const endScrub = () => setScrub(null);
 
   const spanSec = count > 1 ? times[count - 1] - times[0] : 0;
-  const scrubValue =
-    scrub !== null && values[scrub] !== undefined
-      ? `${values[scrub]}${unit} · ${timeLabel(times[scrub], spanSec)}`
-      : null;
+  const last = filled[filled.length - 1];
+  const scrubValue = scrub !== null ? `${value(scrub)}${unit} · ${timeLabel(times[scrub], spanSec)}` : null;
 
   return (
     <div className={styles.chart}>
@@ -121,44 +142,57 @@ export function Chart({ values, times, threshold, unit, label, current, loading 
               </clipPath>
             </defs>
           )}
+          <path d={peakPath} fill="rgba(0, 152, 234, 0.28)" />
           <path d={areaPath} fill="rgba(0, 152, 234, 0.1)" />
           {thresholdLine && (
             <path d={thresholdLine} fill="none" stroke="#ff3b30" strokeWidth={1} strokeDasharray="3 3" opacity={0.5} />
           )}
-          <polyline
-            points={points.join(" ")}
-            fill="none"
-            stroke="var(--ts-accent)"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            clipPath={threshold != null ? `url(#${clipId}-below)` : undefined}
-          />
-          {threshold != null && (
-            <polyline
-              points={points.join(" ")}
+          {bridges.map(([from, to]) => (
+            <path
+              key={from}
+              d={`M${at(from)} L${at(to)}`}
               fill="none"
-              stroke="#ff3b30"
+              stroke="var(--ts-hint)"
+              strokeWidth={1.6}
+              strokeDasharray="3 3"
+              opacity={0.8}
+            />
+          ))}
+          {lines.map((run) => (
+            <polyline
+              key={run[0]}
+              points={run.map(at).join(" ")}
+              fill="none"
+              stroke="var(--ts-accent)"
               strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"
-              clipPath={`url(#${clipId}-above)`}
+              clipPath={threshold != null ? `url(#${clipId}-below)` : undefined}
             />
-          )}
-          {scrub === null && count > 0 && (
-            <circle
-              cx={x(count - 1)}
-              cy={y(values[count - 1])}
-              r={3}
-              fill="var(--ts-accent)"
-              stroke="var(--ts-card)"
-              strokeWidth={1.5}
-            />
+          ))}
+          {threshold != null &&
+            lines.map((run) => (
+              <polyline
+                key={`over-${run[0]}`}
+                points={run.map(at).join(" ")}
+                fill="none"
+                stroke="#ff3b30"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                clipPath={`url(#${clipId}-above)`}
+              />
+            ))}
+          {dots.map((index) => (
+            <circle key={index} cx={x(index)} cy={y(value(index))} r={1.7} fill="var(--ts-accent)" />
+          ))}
+          {scrub === null && (
+            <circle cx={x(last)} cy={y(value(last))} r={3} fill="var(--ts-accent)" stroke="var(--ts-card)" strokeWidth={1.5} />
           )}
           {scrub !== null && (
             <g>
               <line x1={x(scrub)} x2={x(scrub)} y1={0} y2={HEIGHT} stroke="var(--ts-hint)" strokeWidth={1} opacity={0.6} />
-              <circle cx={x(scrub)} cy={y(values[scrub])} r={3.5} fill="var(--ts-accent)" stroke="var(--ts-card)" strokeWidth={1.5} />
+              <circle cx={x(scrub)} cy={y(value(scrub))} r={3.5} fill="var(--ts-accent)" stroke="var(--ts-card)" strokeWidth={1.5} />
             </g>
           )}
         </svg>

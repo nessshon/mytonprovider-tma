@@ -74,9 +74,13 @@ export interface OwnerTriggerEntry {
 export interface OwnerChartPoint {
   t: number;
   cpu: number | null;
+  cpu_max: number | null;
   ram: number | null;
+  ram_max: number | null;
   net_mbps: number | null;
+  net_max: number | null;
   disk: number | null;
+  disk_max: number | null;
 }
 
 export interface OwnerSummary {
@@ -107,6 +111,9 @@ export interface ProviderPayload {
 
 export interface StatsPayload {
   summary: OwnerSummary;
+}
+
+export interface ChartPayload {
   points: OwnerChartPoint[];
 }
 
@@ -180,6 +187,7 @@ export const backend = {
   provider: (pubkey: string) => request<ProviderPayload>(`/api/v1/provider/${pubkey}`),
   providerStats: (pubkey: string, period: string) =>
     request<StatsPayload>(`/api/v1/provider/${pubkey}/stats?period=${period}`),
+  providerChart: (pubkey: string) => request<ChartPayload>(`/api/v1/provider/${pubkey}/chart`),
   bagProblems: (pubkey: string, offset: number) =>
     request<ProblemBagsPayload>(`/api/v1/provider/${pubkey}/bags/problems?offset=${offset}`),
   bag: (query: string) => request<BagPayload>(`/api/v1/bag/${query}`),

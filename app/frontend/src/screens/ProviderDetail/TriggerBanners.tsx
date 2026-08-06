@@ -23,7 +23,7 @@ export function TriggerBanners({ pubkey }: { pubkey: string }) {
   const t = useT();
   const loggedIn = useAuth((s) => s.loggedIn);
   const isSubscribed = useSubscriptions((s) => s.subscribed.includes(pubkey));
-  const { payload } = useOwnerData(pubkey, isSubscribed && loggedIn, "today", "today");
+  const { payload } = useOwnerData(pubkey, isSubscribed && loggedIn, "today");
   const triggers = payload ? ownerTriggers(payload.triggers) : [];
 
   return (
