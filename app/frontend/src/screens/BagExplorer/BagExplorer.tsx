@@ -16,7 +16,7 @@ import type { Dict } from "@/i18n/types";
 import { toUserFriendly } from "@/lib/address";
 import { SC, tint } from "@/lib/colors";
 import { cx } from "@/lib/cx";
-import { EMPTY, formatPriceGram, formatSpace, formatTime, shorten } from "@/lib/format";
+import { EMPTY, ago, formatPriceGram, formatSpace, formatTime, shorten } from "@/lib/format";
 import { bagGatewayUrl } from "@/lib/gateway";
 import { reasonText, reasonTone } from "@/lib/status";
 import { useCatalog } from "@/stores/catalog";
@@ -70,7 +70,7 @@ function nextProofValue(lastProof: number, maxSpan: number, nowSec: number, t: D
   if (lastProof <= 0) return EMPTY;
   const deadline = lastProof + maxSpan;
   if (deadline <= nowSec) {
-    return <span style={{ color: SC.red }}>{t.ago(formatTime(nowSec - deadline, t, true))}</span>;
+    return <span style={{ color: SC.red }}>{ago(nowSec - deadline, t)}</span>;
   }
   return t.inFuture(formatTime(deadline - nowSec, t, true));
 }
@@ -252,7 +252,7 @@ export function BagExplorer() {
                   <FieldRow
                     divider
                     label={t.lastProof}
-                    value={prov.lastProof > 0 ? t.ago(formatTime(nowSec - prov.lastProof, t, true)) : EMPTY}
+                    value={prov.lastProof > 0 ? ago(nowSec - prov.lastProof, t) : EMPTY}
                   />
                   <FieldRow divider label={t.nextProof} value={nextProofValue(prov.lastProof, prov.maxSpan, nowSec, t)} />
                 </Card>

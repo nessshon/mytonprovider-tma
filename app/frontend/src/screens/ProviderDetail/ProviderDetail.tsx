@@ -22,7 +22,7 @@ import type { Dict } from "@/i18n/types";
 import { toUserFriendly } from "@/lib/address";
 import { ACCENT, SC, tint } from "@/lib/colors";
 import { cx } from "@/lib/cx";
-import { EMPTY, GB, amount, formatMbps, formatPing, formatPrice, formatPriceGram, formatSpace, formatTime, shorten, uptimeTone } from "@/lib/format";
+import { EMPTY, GB, ago, amount, formatMbps, formatPing, formatPrice, formatPriceGram, formatSpace, formatTime, shorten, uptimeTone } from "@/lib/format";
 import { describeStatus } from "@/lib/status";
 import { useAuth } from "@/stores/auth";
 import { useCatalog } from "@/stores/catalog";
@@ -44,12 +44,12 @@ function providerFields(p: Provider, t: Dict): Field[] {
     { label: t.span, value: `${formatTime(p.minSpan, t)} – ${formatTime(p.maxSpan, t)}` },
     { label: t.maxBag, value: formatSpace(p.maxBagBytes, t) },
     { label: t.workingTime, value: formatTime(p.workingTime, t) },
-    { label: t.lastOnline, value: p.lastOnlineCheckTime === null ? t.unknown : t.ago(formatTime(p.staleSec, t, true)) },
+    { label: t.lastOnline, value: p.lastOnlineCheckTime === null ? t.unknown : ago(p.staleSec, t) },
     ...(p.hasTelemetry
       ? [
           {
             label: t.telemetryField,
-            value: p.telemetry.updatedAt === null ? t.unknown : t.ago(formatTime(p.telemetryStaleSec, t, true)),
+            value: p.telemetry.updatedAt === null ? t.unknown : ago(p.telemetryStaleSec, t),
           },
         ]
       : []),

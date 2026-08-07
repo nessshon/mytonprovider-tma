@@ -10,7 +10,7 @@ import { useT } from "@/i18n";
 import type { Dict, DictStringKey } from "@/i18n/types";
 import { explorerAddressUrl } from "@/lib/address";
 import { cx } from "@/lib/cx";
-import { formatTime } from "@/lib/format";
+import { JUST_NOW_SEC, formatTime } from "@/lib/format";
 import { Icon } from "@/components/Icon/Icon";
 import { useAlerts } from "@/stores/alerts";
 import { useAuth } from "@/stores/auth";
@@ -27,6 +27,10 @@ const GAUGE_LABEL: Record<GaugeKey, DictStringKey> = {
   disk_load_high: "chartDisk",
   network_high: "chartNet",
 };
+
+function balanceAge(secs: number, t: Dict): string {
+  return secs < JUST_NOW_SEC ? t.updatedNow : t.updatedAgo(formatTime(secs, t, true));
+}
 
 export function OwnerPanel({ provider, pubkey, children }: { provider: Provider; pubkey: string; children: ReactNode }) {
   const t = useT();
@@ -62,7 +66,7 @@ export function OwnerPanel({ provider, pubkey, children }: { provider: Provider;
                 <span className={styles.balanceUnit}>GRAM</span>
               </div>
               <div className={styles.balanceUpdated}>
-                {owner.balanceUpdatedAt === null ? t.unknown : t.updatedAgo(formatTime(nowSec - owner.balanceUpdatedAt, t, true))}
+                {owner.balanceUpdatedAt === null ? t.unknown : balanceAge(nowSec - owner.balanceUpdatedAt, t)}
               </div>
             </div>
             <a

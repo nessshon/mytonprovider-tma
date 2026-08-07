@@ -7,7 +7,7 @@ import type { ProblemBag } from "@/data/backend";
 import { useT } from "@/i18n";
 import { toUserFriendly } from "@/lib/address";
 import { SC } from "@/lib/colors";
-import { formatSpace, formatTime, shorten } from "@/lib/format";
+import { ago, formatSpace, shorten } from "@/lib/format";
 import { bagGatewayUrl } from "@/lib/gateway";
 import { reasonText, reasonTone } from "@/lib/status";
 import { useNavigate } from "react-router-dom";
@@ -39,7 +39,7 @@ export function BagSheet({ bag, onClose }: BagSheetProps) {
             <ExplorerAddressRow label={t.bagContract} address={bag.address} divider />
             {bag.owner_address && <ExplorerAddressRow label={t.bagOwner} address={toUserFriendly(bag.owner_address)} divider />}
             {bag.size != null && <FieldRow label={t.bagSize} value={formatSpace(bag.size, t)} divider />}
-            <FieldRow label={t.bagCheckedLabel} value={t.ago(formatTime(nowSec - bag.reason_at, t, true))} divider />
+            <FieldRow label={t.bagCheckedLabel} value={ago(nowSec - bag.reason_at, t)} divider />
             <FieldRow label={t.bagReason} value={bag.reason} divider />
           </Card>
           <button className={styles.openBtn} type="button" onClick={() => navigate(`/bags?q=${bag.bag_id}`)}>

@@ -8,6 +8,7 @@ export const NANO = 1_000_000_000;
 export const PING_MAX = 10000;
 
 export const EMPTY = "—";
+export const JUST_NOW_SEC = 60;
 
 export function diskSpeedToNum(text: string | null): number | null {
   if (!text) return null;
@@ -63,6 +64,10 @@ export function formatTime(secs: number, t: Dict, skipLast = false): string {
   if (secs < 604800)
     return join(days ? t.days(days) : "", hours ? t.hr(hours) : "", !skipLast && minutes ? t.min(minutes) : "");
   return join(days ? t.days(days) : "", !skipLast && hours ? t.hr(hours) : "");
+}
+
+export function ago(secs: number, t: Dict): string {
+  return secs < JUST_NOW_SEC ? t.justNow : t.ago(formatTime(secs, t, true));
 }
 
 export function formatMbps(bytesPerSec: number | null): string {
