@@ -6,6 +6,14 @@ import type { OwnerChartPoint, OwnerPayload, OwnerSummary, OwnerTriggerEntry } f
 import type { Provider } from "./types";
 
 export type OwnerPeriod = "hour" | "today" | "week" | "month";
+export type OwnerChartRange = "1h" | "6h" | "12h" | "24h";
+
+export const OWNER_CHART_RANGES: { value: OwnerChartRange; hours: number }[] = [
+  { value: "1h", hours: 1 },
+  { value: "6h", hours: 6 },
+  { value: "12h", hours: 12 },
+  { value: "24h", hours: 24 },
+];
 
 export type GaugeKey = "cpu_high" | "ram_high" | "disk_load_high" | "network_high";
 

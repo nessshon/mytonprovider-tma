@@ -329,10 +329,6 @@
   border-radius: var(--ts-radius-card);
 }
 
-.chartWindow {
-  font-size: 13px;
-  color: var(--ts-hint);
-}
 
 @keyframes ts-pulse {
   0%,

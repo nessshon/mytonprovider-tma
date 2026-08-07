@@ -122,7 +122,6 @@ export const en = {
   viewInExplorer: "View in explorer",
   lastOnline: "Last online",
   telemetryField: "Last telemetry",
-  chartWindow: "Last 24 hours",
   periodHour: "Hour",
   periodDay: "Day",
   periodWeek: "Week",

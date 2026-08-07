@@ -2,7 +2,7 @@ import { Chart } from "@/components/Chart";
 import { Gauge } from "@/components/Gauge";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SegmentControl } from "@/components/SegmentControl";
-import { adaptOwner, type GaugeKey, type OwnerPeriod } from "@/data/owner";
+import { OWNER_CHART_RANGES, adaptOwner, type GaugeKey, type OwnerChartRange, type OwnerPeriod } from "@/data/owner";
 import { unsubscribeProvider } from "@/data/sync";
 import type { Provider } from "@/data/types";
 import { prefetchOwner, useOwnerData } from "@/hooks/useOwnerData";
@@ -39,8 +39,9 @@ export function OwnerPanel({ provider, pubkey, children }: { provider: Provider;
 
   const [tab, setTab] = useState<OwnerTab>("overview");
   const [period, setPeriod] = useState<OwnerPeriod>("today");
+  const [chartRange, setChartRange] = useState<OwnerChartRange>("1h");
 
-  const { payload, denied, failed, refreshing } = useOwnerData(pubkey, loggedIn, period);
+  const { payload, denied, failed, refreshing } = useOwnerData(pubkey, loggedIn, period, chartRange);
   useEffect(() => {
     if (loggedIn) prefetchOwner(pubkey);
   }, [pubkey, loggedIn]);
@@ -175,7 +176,13 @@ export function OwnerPanel({ provider, pubkey, children }: { provider: Provider;
             ))}
           </div>
           <div className={styles.chartCard}>
-            <div className={styles.chartWindow}>{t.chartWindow}</div>
+            <SegmentControl<OwnerChartRange>
+              options={OWNER_CHART_RANGES.map((range) => ({ value: range.value, label: t.hr(range.hours) }))}
+              value={chartRange}
+              onChange={setChartRange}
+              height={34}
+              fontSize={13}
+            />
             {owner.charts.map((chart) => (
               <Chart
                 key={chart.key}

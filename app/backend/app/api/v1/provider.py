@@ -25,8 +25,14 @@ PERIODS = {
     "month": timedelta(days=30),
 }
 
-CHART_WINDOW = timedelta(hours=24)
-CHART_BUCKET_SEC = 15 * 60
+ChartRange: TypeAlias = Literal["1h", "6h", "12h", "24h"]
+
+CHART_RANGES: dict[str, tuple[timedelta, int]] = {
+    "1h": (timedelta(hours=1), 60),
+    "6h": (timedelta(hours=6), 5 * 60),
+    "12h": (timedelta(hours=12), 10 * 60),
+    "24h": (timedelta(hours=24), 15 * 60),
+}
 
 
 class TriggerOut(BaseModel):
@@ -203,21 +209,23 @@ async def provider_stats(
 
 @router.get("/{pubkey}/chart")
 async def provider_chart(
+    chart_range: ChartRange = Query("1h", alias="range"),
     access: OwnerAccess = Depends(require_access),
     session: AsyncSession = Depends(get_session),
 ) -> ChartResponse:
+    window, bucket_sec = CHART_RANGES[chart_range]
     now = utcnow()
-    since = now - CHART_WINDOW
-    rows = await ProviderHistoryRepo(session).charts(access.provider.pubkey, since, CHART_BUCKET_SEC)
+    since = now - window
+    rows = await ProviderHistoryRepo(session).charts(access.provider.pubkey, since, bucket_sec)
     buckets = {row.bucket: row for row in rows}
-    first = int(since.timestamp()) // CHART_BUCKET_SEC
-    last = int(now.timestamp()) // CHART_BUCKET_SEC
-    points = [_chart_point(bucket, buckets.get(bucket)) for bucket in range(first, last + 1)]
+    first = int(since.timestamp()) // bucket_sec
+    last = int(now.timestamp()) // bucket_sec
+    points = [_chart_point(bucket, buckets.get(bucket), bucket_sec) for bucket in range(first, last + 1)]
     return ChartResponse(points=points)
 
 
-def _chart_point(bucket: int, row: Row[Any] | None) -> ChartPoint:
-    at = bucket * CHART_BUCKET_SEC
+def _chart_point(bucket: int, row: Row[Any] | None, bucket_sec: int) -> ChartPoint:
+    at = bucket * bucket_sec
     if row is None:
         return ChartPoint(t=at)
     return ChartPoint(

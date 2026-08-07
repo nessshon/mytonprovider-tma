@@ -6,7 +6,7 @@ import {
   type ProviderPayload,
   type StatsPayload,
 } from "@/data/backend";
-import { OWNER_PERIOD_API, type OwnerPeriod } from "@/data/owner";
+import { OWNER_PERIOD_API, type OwnerChartRange, type OwnerPeriod } from "@/data/owner";
 import { useAuth } from "@/stores/auth";
 import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
@@ -52,26 +52,31 @@ function fetchStats(pubkey: string, period: OwnerPeriod): Promise<StatsPayload> 
   return cached(`s|${pubkey}|${api}`, () => backend.providerStats(pubkey, api));
 }
 
-function fetchChart(pubkey: string): Promise<ChartPayload> {
-  return cached(`c|${pubkey}`, () => backend.providerChart(pubkey));
+function fetchChart(pubkey: string, range: OwnerChartRange): Promise<ChartPayload> {
+  return cached(`c|${pubkey}|${range}`, () => backend.providerChart(pubkey, range));
 }
 
 const PREFETCH_PERIODS: OwnerPeriod[] = ["hour", "week", "month"];
+const DEFAULT_CHART_RANGE: OwnerChartRange = "1h";
 
 export function prefetchOwner(pubkey: string): void {
   if (!useAuth.getState().token) return;
   fetchProvider(pubkey).catch(() => {});
-  fetchChart(pubkey).catch(() => {});
+  fetchChart(pubkey, DEFAULT_CHART_RANGE).catch(() => {});
   for (const period of PREFETCH_PERIODS) {
     fetchStats(pubkey, period).catch(() => {});
   }
 }
 
-async function composedOwner(pubkey: string, period: OwnerPeriod): Promise<OwnerPayload> {
+async function composedOwner(
+  pubkey: string,
+  period: OwnerPeriod,
+  chartRange: OwnerChartRange,
+): Promise<OwnerPayload> {
   const [provider, stats, chart] = await Promise.all([
     fetchProvider(pubkey),
     fetchStats(pubkey, period),
-    fetchChart(pubkey),
+    fetchChart(pubkey, chartRange),
   ]);
   return { ...provider, summary: stats.summary, chart: chart.points };
 }
@@ -106,6 +111,7 @@ export function useOwnerData(
   pubkey: string,
   enabled: boolean,
   period: OwnerPeriod,
+  chartRange: OwnerChartRange = DEFAULT_CHART_RANGE,
 ): { payload: OwnerPayload | null; denied: boolean; failed: boolean; refreshing: boolean } {
   const token = useAuth((s) => s.token);
   const tick = useOwnerRevalidation((s) => s.tick);
@@ -125,7 +131,7 @@ export function useOwnerData(
     }
     if (!hasData.current) setRefreshing(true);
     let alive = true;
-    composedOwner(pubkey, period)
+    composedOwner(pubkey, period, chartRange)
       .then((data) => {
         if (!alive) return;
         hasData.current = true;
@@ -145,7 +151,7 @@ export function useOwnerData(
     return () => {
       alive = false;
     };
-  }, [pubkey, enabled, token, period, tick]);
+  }, [pubkey, enabled, token, period, chartRange, tick]);
 
   return { payload, denied, failed, refreshing };
 }
