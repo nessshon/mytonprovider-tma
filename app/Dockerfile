@@ -9,8 +9,12 @@ RUN pnpm build
 
 FROM python:3.10-slim
 WORKDIR /backend
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend backend
 COPY --from=frontend /build/dist backend/static
-CMD ["sh", "-c", "cd backend && alembic upgrade head && python -m app"]
+COPY --chmod=755 entrypoint.sh .
+CMD ["./entrypoint.sh"]

@@ -16,6 +16,7 @@ services:
       start_period: 20s
     volumes:
       - ./app/backend/data:/backend/backend/data
+      - ./.git:/backend/.git:ro
     logging:
       driver: json-file
       options:

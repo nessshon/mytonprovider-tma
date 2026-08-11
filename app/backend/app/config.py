@@ -9,6 +9,10 @@ TIMEZONE = "Europe/Moscow"
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = env.bool("DEBUG", False)
 
+APP_REPO = env.str("APP_REPO", "")
+APP_BRANCH = env.str("APP_BRANCH", "")
+APP_COMMIT = env.str("APP_COMMIT", "")
+
 JWT_SECRET = env.str("JWT_SECRET")
 WEBAPP_URL = env.str("WEBAPP_URL").rstrip("/")
 API_RATE_LIMIT = env.int("API_RATE_LIMIT", 100)
