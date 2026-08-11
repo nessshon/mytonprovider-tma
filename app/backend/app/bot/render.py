@@ -183,7 +183,7 @@ def _span(seconds: float) -> str:
 
 
 def _age(moment: datetime | None) -> str:
-    return "никогда" if moment is None else _span((utcnow() - moment).total_seconds())
+    return "" if moment is None else _span((utcnow() - moment).total_seconds())
 
 
 def _heading(title: str) -> RichBlockSectionHeading:
@@ -264,7 +264,7 @@ def stats(data: Stats) -> InputRichMessage:
             blocks.append(
                 _details(
                     f"{title} · {len(rows)}",
-                    _listing([f"{short_key(row.pubkey)}  {_age(row.moment)}" for row in rows]),
+                    _listing([f"{short_key(row.pubkey)}  {_age(row.moment)}".rstrip() for row in rows]),
                 )
             )
 
