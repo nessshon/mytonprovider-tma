@@ -3,17 +3,18 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.filters import CommandStart
+from aiogram.filters import Command, CommandStart
 
 from app import config
 
-from .routers import on_chat_member, on_start
+from .routers import on_chat_member, on_start, on_stats
 
 __all__ = ["bot", "dp", "logger", "start", "stop"]
 
 dp = Dispatcher()
 logger = logging.getLogger(__name__)
 dp.message.register(on_start, CommandStart())
+dp.message.register(on_stats, Command("stats"))
 dp.my_chat_member.register(on_chat_member)
 bot = Bot(config.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 

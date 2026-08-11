@@ -1,3 +1,8 @@
+from collections.abc import Sequence
+from typing import Any
+
+from sqlalchemy import Row, func, select
+
 from app.alerts import DEFAULT_THRESHOLDS
 from app.db.models import UserModel
 from app.db.repos._base import BaseRepo
@@ -35,3 +40,18 @@ class UserRepo(BaseRepo[UserModel]):
             ]
         )
         return await self.session.get_one(UserModel, user_id)
+
+    async def counters(self) -> Row[Any]:
+        stmt = select(
+            func.count().label("total"),
+            func.count().filter(UserModel.blocked_at.is_not(None)).label("blocked"),
+        ).select_from(UserModel)
+        result = await self.session.execute(stmt)
+        return result.one()
+
+    async def languages(self) -> Sequence[Row[Any]]:
+        stmt = (
+            select(UserModel.lang, func.count().label("count")).group_by(UserModel.lang).order_by(func.count().desc())
+        )
+        result = await self.session.execute(stmt)
+        return result.all()

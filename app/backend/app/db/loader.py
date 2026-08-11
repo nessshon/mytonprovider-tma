@@ -39,6 +39,10 @@ def on_close(dbapi_connection: Any, _connection_record: Any) -> None:
     cursor.close()
 
 
+def db_size() -> int:
+    return sum(path.stat().st_size for path in db_dir.glob("database.sqlite*"))
+
+
 async def get_session() -> AsyncIterator[AsyncSession]:
     async with session_factory() as session:
         yield session

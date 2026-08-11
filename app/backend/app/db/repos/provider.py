@@ -2,7 +2,8 @@ from collections.abc import Sequence
 from datetime import datetime, timedelta
 from typing import Any
 
-from sqlalchemy import Float, Integer, Row, bindparam, select, text
+from sqlalchemy import Float, Integer, Row, bindparam, func, or_, select, text
+from sqlalchemy.orm import InstrumentedAttribute
 
 from app.db.models import ProviderHistoryModel, ProviderModel, UTCDateTime
 from app.db.repos._base import BaseRepo
@@ -13,6 +14,42 @@ BOUND_REACH = 0.03
 
 class ProviderRepo(BaseRepo[ProviderModel]):
     model = ProviderModel
+
+    async def counters(self, fresh: datetime) -> Row[Any]:
+        stmt = select(
+            func.count().label("total"),
+            func.count().filter(ProviderModel.last_online_at >= fresh).label("online"),
+            func.count().filter(ProviderModel.telemetry_at >= fresh).label("telemetry"),
+            func.count().filter(ProviderModel.telemetry_pass.is_not(None)).label("passworded"),
+        ).select_from(ProviderModel)
+        result = await self.session.execute(stmt)
+        return result.one()
+
+    async def offline(self, fresh: datetime) -> Sequence[Row[Any]]:
+        return await self._stale(ProviderModel.last_online_at, fresh)
+
+    async def silent(self, fresh: datetime) -> Sequence[Row[Any]]:
+        return await self._stale(ProviderModel.telemetry_at, fresh)
+
+    async def storage_versions(self) -> Sequence[Row[Any]]:
+        return await self._versions(ProviderModel.ton_storage_githash)
+
+    async def provider_versions(self) -> Sequence[Row[Any]]:
+        return await self._versions(ProviderModel.ton_storage_provider_githash)
+
+    async def _stale(self, col: InstrumentedAttribute[datetime | None], fresh: datetime) -> Sequence[Row[Any]]:
+        stmt = (
+            select(ProviderModel.pubkey, col.label("moment"))
+            .where(or_(col.is_(None), col < fresh))
+            .order_by(col.desc())
+        )
+        result = await self.session.execute(stmt)
+        return result.all()
+
+    async def _versions(self, col: InstrumentedAttribute[str | None]) -> Sequence[Row[Any]]:
+        stmt = select(col.label("githash"), ProviderModel.pubkey).where(col.is_not(None), col != "").order_by(col)
+        result = await self.session.execute(stmt)
+        return result.all()
 
 
 class ProviderHistoryRepo(BaseRepo[ProviderHistoryModel]):
@@ -92,6 +129,10 @@ class ProviderHistoryRepo(BaseRepo[ProviderHistoryModel]):
         params = {"pubkey": pubkey, "since": since, "bucket": bucket_sec}
         result = await self.session.execute(stmt, params)
         return result.all()
+
+    async def count(self) -> int:
+        stmt = select(func.count()).select_from(ProviderHistoryModel)
+        return await self.session.scalar(stmt) or 0
 
     async def rollup(self) -> int:
         tiers = (

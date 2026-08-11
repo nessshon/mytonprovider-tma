@@ -1,7 +1,8 @@
 from collections.abc import Sequence
 from datetime import datetime
+from typing import Any
 
-from sqlalchemy import ColumnElement, func, select
+from sqlalchemy import ColumnElement, Row, distinct, func, select
 
 from app.db.models import ContractModel
 from app.db.repos._base import BaseRepo
@@ -53,3 +54,11 @@ class ContractRepo(BaseRepo[ContractModel]):
         )
         result = await self.session.execute(stmt)
         return result.scalars().all(), total
+
+    async def counters(self) -> Row[Any]:
+        stmt = select(
+            func.count().label("total"),
+            func.count(distinct(ContractModel.bag_id)).label("bags"),
+        ).select_from(ContractModel)
+        result = await self.session.execute(stmt)
+        return result.one()
