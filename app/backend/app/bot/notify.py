@@ -11,6 +11,7 @@ from app.bot import bot, render, sender
 from app.bot.translator import t
 from app.db.models import UserModel
 from app.db.repos import SubscriptionRepo
+from app.utils import utcnow
 
 logger = logging.getLogger(__name__)
 
@@ -78,19 +79,19 @@ async def _subscribers(session: AsyncSession, pubkey: str, alert_type: AlertType
 
 
 async def _deliver(user: UserModel, text: str) -> bool:
-    if not user.alerts_enabled:
+    if not user.alerts_enabled or user.blocked_at is not None:
         return False
     return _apply_result(user, await sender.send_message(user.id, text))
 
 
 async def _deliver_rich(user: UserModel, rich_message: InputRichMessage) -> bool:
-    if not user.alerts_enabled:
+    if not user.alerts_enabled or user.blocked_at is not None:
         return False
     return _apply_result(user, await sender.send_rich_message(user.id, rich_message))
 
 
 def _apply_result(user: UserModel, result: str) -> bool:
     if result == "forbidden":
-        user.alerts_enabled = False
-        logger.info("user %s blocked the bot, alerts disabled", user.id)
+        user.blocked_at = utcnow()
+        logger.info("user %s blocked the bot", user.id)
     return result == "ok"

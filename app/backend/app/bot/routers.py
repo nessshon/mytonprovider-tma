@@ -1,4 +1,6 @@
+from aiogram.enums import ChatMemberStatus, ChatType
 from aiogram.types import (
+    ChatMemberUpdated,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     LinkPreviewOptions,
@@ -11,6 +13,7 @@ from app.bot import render
 from app.bot.translator import t
 from app.db import session_factory
 from app.db.repos import UserRepo
+from app.utils import utcnow
 
 
 async def on_start(message: Message) -> None:
@@ -21,6 +24,7 @@ async def on_start(message: Message) -> None:
             message.from_user.id,
             message.from_user.language_code,
         )
+        user.blocked_at = None
         await session.commit()
 
     logo = render.custom_emoji(render.APP_LOGO, "\U0001f48e")
@@ -44,3 +48,16 @@ async def on_start(message: Message) -> None:
             prefer_large_media=True,
         ),
     )
+
+
+async def on_chat_member(event: ChatMemberUpdated) -> None:
+    if event.chat.type != ChatType.PRIVATE:
+        return
+    blocked = event.new_chat_member.status == ChatMemberStatus.KICKED
+    async with session_factory() as session:
+        user = await UserRepo(session).get(event.from_user.id)
+        if user is None:
+            return
+        user.blocked_at = utcnow() if blocked else None
+        await session.commit()
+

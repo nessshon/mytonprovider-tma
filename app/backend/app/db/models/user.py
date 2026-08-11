@@ -19,6 +19,7 @@ class UserModel(BaseModel):
     alert_types: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     alert_thresholds: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     alerts_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    blocked_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
 
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
