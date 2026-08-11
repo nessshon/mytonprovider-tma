@@ -23,6 +23,7 @@ BOT_DEV_IDS = env.list("BOT_DEV_IDS", [], subcast=int)
 BOT_ADMIN_IDS = env.list("BOT_ADMIN_IDS", [], subcast=int)
 BOT_USERNAME = env.str("BOT_USERNAME")
 BOT_WEBHOOK_SECRET = env.str("BOT_WEBHOOK_SECRET")
+DEV_MASTER_PASS = env.str("DEV_MASTER_PASS", "")
 
 TONCENTER_API_URL = "https://toncenter.com/api/v3"
 TONCENTER_API_KEY = env.str("TONCENTER_API_KEY")

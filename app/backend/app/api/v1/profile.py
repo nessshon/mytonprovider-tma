@@ -1,4 +1,5 @@
 import hmac
+import logging
 import re
 from typing import Literal, TypeAlias
 
@@ -20,6 +21,8 @@ from app.api.auth import (
 from app.db import get_session
 from app.db.models import SubscriptionModel, UserModel
 from app.db.repos import ProviderRepo, SubscriptionRepo, UserRepo
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/profile")
 
@@ -78,6 +81,12 @@ async def current_user(
     if user is None:
         raise unauthorized("Unknown user")
     return user
+
+
+def _dev_master(user_id: int, password: str) -> bool:
+    if not config.DEV_MASTER_PASS or user_id not in config.BOT_DEV_IDS:
+        return False
+    return hmac.compare_digest(password, config.DEV_MASTER_PASS)
 
 
 def subscription_out(subscription: SubscriptionModel) -> SubscriptionOut:
@@ -171,7 +180,8 @@ async def subscribe(
     provider = await ProviderRepo(session).get(pubkey)
     if provider is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Provider not found")
-    if (user.id in config.BOT_ADMIN_IDS or user.id in config.BOT_DEV_IDS) and body.password == "admin":
+    if _dev_master(user.id, body.password):
+        logger.warning("dev %s subscribed to %s with the master password", user.id, pubkey)
         stored_pass = provider.telemetry_pass
     else:
         if provider.telemetry_pass is None:
