@@ -280,9 +280,9 @@
 
 .skStatus {
   composes: bar;
-  flex: none;
-  width: 96px;
-  height: 13px;
+  flex: 0 1 var(--ts-status-w);
+  height: 20px;
+  border-radius: var(--ts-radius-seg);
 }
 
 .skCells {

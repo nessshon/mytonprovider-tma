@@ -31,14 +31,24 @@
 
 .spacer {
   flex: 1;
-  min-width: 4px;
 }
 
 .status {
-  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 1000 var(--ts-status-w);
+  min-width: min-content;
+  padding: 2px 7px;
+  border-radius: var(--ts-radius-seg);
   font-size: 13.5px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.ratio {
+  font-size: 12px;
+  font-weight: 400;
 }
 
 .cells {

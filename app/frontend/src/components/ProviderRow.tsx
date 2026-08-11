@@ -3,7 +3,8 @@ import { StatusDot } from "@/components/StatusDot";
 import type { Provider } from "@/data/types";
 import { useT } from "@/i18n";
 import type { Dict } from "@/i18n/types";
-import { EMPTY, amount, formatPrice, formatTime, shorten, trim } from "@/lib/format";
+import { tint } from "@/lib/colors";
+import { EMPTY, amount, formatPrice, formatTime, shorten, trimDown } from "@/lib/format";
 import { describeStatus } from "@/lib/status";
 import type { ReactNode } from "react";
 import styles from "./ProviderRow.module.css";
@@ -35,7 +36,6 @@ function freeSpace(provider: Provider, t: Dict): string {
 export function ProviderRow({ provider, onOpen, trailing }: ProviderRowProps) {
   const t = useT();
   const status = describeStatus(provider, t);
-  const hasChecks = status.total > 0 && provider.status === 0;
   const place = provider.location?.country || provider.location?.countryIso || EMPTY;
   const working = provider.workingTime > 0 ? formatTime(provider.workingTime, t, true) : EMPTY;
 
@@ -53,11 +53,18 @@ export function ProviderRow({ provider, onOpen, trailing }: ProviderRowProps) {
         <span className={styles.pk}>{shorten(provider.pubkey, 12).toUpperCase()}</span>
         <CopyButton value={provider.pubkey} />
         <span className={styles.spacer} />
-        <span className={styles.status} style={{ color: status.color }}>
+        <span
+          className={styles.status}
+          style={{
+            color: status.color,
+            background: tint(status.color, 0.14),
+            boxShadow: `inset 0 0 0 1px ${tint(status.color, 0.32)}`,
+          }}
+        >
+          <StatusDot color={status.color} size={7} />
           {status.label}
-          {hasChecks && ` ${trim(status.ratio * 100, 1)}%`}
+          {status.hasRatio && <span className={styles.ratio}>{trimDown(status.ratio * 100, 0)}%</span>}
         </span>
-        <StatusDot color={status.color} size={8} />
       </div>
       <div className={styles.cells}>
         {cell(t.rating, amount(provider.rating))}
