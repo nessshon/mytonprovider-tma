@@ -200,9 +200,10 @@ export function ProviderDetail() {
           )}
           <div className={styles.statusBody}>
             <div className={styles.statusTop}>
-              <div className={styles.statusLabelWrap}>
+              <div className={styles.statusLabelWrap} style={{ color: st.color }}>
                 <StatusDot color={st.color} size={9} />
-                <span style={{ color: st.color }}>{st.label}</span>
+                <span>{st.label}</span>
+                {st.hasRatio && <span className={styles.statusRatio}>{amount(st.ratio * 100)}%</span>}
               </div>
               {st.total > 0 && (
                 <div className={styles.checks}>

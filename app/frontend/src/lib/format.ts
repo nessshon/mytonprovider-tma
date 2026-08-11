@@ -30,6 +30,11 @@ export function trim(value: number, digits: number): string {
   return String(parseFloat(value.toFixed(digits)));
 }
 
+export function trimDown(value: number, digits: number): string {
+  const scale = 10 ** digits;
+  return String(Math.floor(value * scale) / scale);
+}
+
 export function amount(value: number): string {
   return trim(value, 2);
 }

@@ -87,6 +87,12 @@
   font-weight: 700;
 }
 
+.statusRatio {
+  font-size: 13px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
 .checks {
   display: flex;
   align-items: center;

@@ -84,6 +84,7 @@ interface StatusView {
   label: string;
   desc: string;
   ratio: number;
+  hasRatio: boolean;
   passed: number;
   total: number;
 }
@@ -98,6 +99,7 @@ export function describeStatus(p: Provider, t: Dict): StatusView {
     label: t.status[s.labelKey],
     desc,
     ratio: s.ratio,
+    hasRatio: p.status === 0 && s.total > 0,
     passed: s.passed,
     total: s.total,
   };
