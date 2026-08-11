@@ -1,8 +1,11 @@
 import html
+import time
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from app import config
+
+STARTED = time.monotonic()
 
 
 def utcnow() -> datetime:

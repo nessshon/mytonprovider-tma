@@ -1,5 +1,4 @@
 import logging
-import time
 
 from fastapi import APIRouter, Response, status
 from pydantic import BaseModel
@@ -13,22 +12,10 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/health")
 
-STALE_FACTOR = 3
-STARTED = time.monotonic()
-
 
 class HealthResponse(BaseModel):
     status: str
     stale: list[str]
-
-
-def _stale() -> list[str]:
-    now = time.monotonic()
-    return [
-        worker.__name__
-        for worker in WORKERS
-        if now - (worker.last_success or STARTED) > worker.interval * STALE_FACTOR + worker.delay
-    ]
 
 
 @router.api_route("", methods=["GET", "HEAD"])
@@ -42,5 +29,5 @@ async def health(response: Response) -> HealthResponse:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return HealthResponse(status="down", stale=[])
 
-    stale = _stale()
-    return HealthResponse(status="degraded" if stale else "ok", stale=stale)
+    lagging = [worker.__name__ for worker in WORKERS if worker.is_stale()]
+    return HealthResponse(status="degraded" if lagging else "ok", stale=lagging)

@@ -3,6 +3,9 @@ import logging
 import time
 
 from app.bot import notify
+from app.utils import STARTED
+
+STALE_FACTOR = 3
 
 
 class BaseWorker:
@@ -13,6 +16,11 @@ class BaseWorker:
 
     async def run(self) -> None:
         raise NotImplementedError
+
+    @classmethod
+    def is_stale(cls) -> bool:
+        idle = time.monotonic() - (cls.last_success or STARTED)
+        return idle > cls.interval * STALE_FACTOR + cls.delay
 
     @classmethod
     def _pause(cls, plain: float) -> float:
