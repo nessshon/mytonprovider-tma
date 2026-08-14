@@ -46,6 +46,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+.mark {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .ratio {
   font-size: 12px;
   font-weight: 400;

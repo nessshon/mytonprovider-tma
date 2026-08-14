@@ -3,9 +3,10 @@ import { StatusDot } from "@/components/StatusDot";
 import type { Provider } from "@/data/types";
 import { useT } from "@/i18n";
 import type { Dict } from "@/i18n/types";
-import { tint } from "@/lib/colors";
-import { EMPTY, amount, formatPrice, formatTime, shorten, trimDown } from "@/lib/format";
+import { SC, rankColor, tint } from "@/lib/colors";
+import { EMPTY, amount, formatPrice, formatTime, freeSpaceTone, shorten, spaceFreePercent, trimDown } from "@/lib/format";
 import { describeStatus } from "@/lib/status";
+import { useCatalog } from "@/stores/catalog";
 import type { ReactNode } from "react";
 import styles from "./ProviderRow.module.css";
 
@@ -36,10 +37,14 @@ function freeSpace(provider: Provider, t: Dict): string {
 export function ProviderRow({ provider, onOpen, trailing }: ProviderRowProps) {
   const t = useT();
   const status = describeStatus(provider, t);
+  const rank = useCatalog((s) => s.ranks[provider.pubkey]);
+  const freePercent = provider.hasTelemetry
+    ? spaceFreePercent(provider.telemetry.totalSpace, provider.telemetry.usedSpace)
+    : null;
   const place = provider.location?.country || provider.location?.countryIso || EMPTY;
   const working = provider.workingTime > 0 ? formatTime(provider.workingTime, t, true) : EMPTY;
 
-  const cell = (label: string, value: ReactNode) => (
+  const cell = (label: ReactNode, value: ReactNode) => (
     <span className={styles.cell}>
       <span className={styles.cellLabel}>{label}</span>
       <span className={styles.cellValue}>{value}</span>
@@ -67,10 +72,31 @@ export function ProviderRow({ provider, onOpen, trailing }: ProviderRowProps) {
         </span>
       </div>
       <div className={styles.cells}>
-        {cell(t.rating, amount(provider.rating))}
+        {cell(
+          rank ? (
+            <>
+              {t.rating} <b className={styles.mark} style={{ color: rankColor(rank) }}>{`#${rank}`}</b>
+            </>
+          ) : (
+            t.rating
+          ),
+          amount(provider.rating),
+        )}
         {cell(t.uptime, `${amount(provider.uptime)}%`)}
         {cell(t.price, withUnits(`${formatPrice(provider.price)} GRAM`))}
-        {cell(t.freeLabel, withUnits(freeSpace(provider, t)))}
+        {cell(
+          freePercent === null ? (
+            t.freeLabel
+          ) : (
+            <>
+              {t.freeLabel}{" "}
+              <b className={styles.mark} style={{ color: SC[freeSpaceTone(freePercent)] }}>
+                {`${Math.round(freePercent)}%`}
+              </b>
+            </>
+          ),
+          withUnits(freeSpace(provider, t)),
+        )}
         {cell(t.workingTime, withUnits(working))}
         {cell(t.location, place)}
       </div>

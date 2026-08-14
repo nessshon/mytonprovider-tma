@@ -1,6 +1,6 @@
 import { HttpError } from "@/data/http";
 import { fetchCatalog } from "@/data/providersApi";
-import { computeBounds } from "@/data/query";
+import { computeBounds, computeRanks } from "@/data/query";
 import type { FilterBounds, Provider } from "@/data/types";
 import { create } from "zustand";
 
@@ -10,6 +10,7 @@ const STALE_MS = 120_000;
 
 interface CatalogState {
   providers: Provider[];
+  ranks: Record<string, number>;
   bounds: FilterBounds | null;
   status: LoadStatus;
   errorStatus: number | null;
@@ -23,7 +24,14 @@ export const useCatalog = create<CatalogState>((set, get) => {
     if (!silent) set({ status: "loading" });
     try {
       const providers = await fetchCatalog();
-      set({ providers, bounds: computeBounds(providers), status: "ready", errorStatus: null, loadedAt: Date.now() });
+      set({
+        providers,
+        ranks: computeRanks(providers),
+        bounds: computeBounds(providers),
+        status: "ready",
+        errorStatus: null,
+        loadedAt: Date.now(),
+      });
     } catch (error) {
       console.error("Catalog load failed", error);
       if (!silent) set({ status: "error", errorStatus: error instanceof HttpError ? error.status : null });
@@ -32,6 +40,7 @@ export const useCatalog = create<CatalogState>((set, get) => {
 
   return {
     providers: [],
+    ranks: {},
     bounds: null,
     status: "idle",
     errorStatus: null,

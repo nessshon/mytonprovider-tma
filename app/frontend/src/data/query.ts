@@ -84,6 +84,15 @@ function boundOf(values: (number | null)[], fromMin: boolean): Range {
   return [lo, Math.max(lo + 1, Math.ceil(p95))];
 }
 
+export function computeRanks(providers: Provider[]): Record<string, number> {
+  const ranked = providers.filter((p) => p.rating > 0).sort((a, b) => b.rating - a.rating);
+  const ranks: Record<string, number> = {};
+  ranked.forEach((p, index) => {
+    ranks[p.pubkey] = index + 1;
+  });
+  return ranks;
+}
+
 export function computeBounds(providers: Provider[]): FilterBounds {
   const bounds = { uptime: [0, 100] as Range } as FilterBounds;
   for (const key of RANGE_KEYS) {

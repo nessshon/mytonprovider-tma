@@ -9,6 +9,9 @@ export const PING_MAX = 10000;
 
 export const EMPTY = "—";
 export const JUST_NOW_SEC = 60;
+export const LEVEL_MARGIN = 12;
+export const FREE_LOW = 15;
+export const FREE_WARN = 25;
 
 export function diskSpeedToNum(text: string | null): number | null {
   if (!text) return null;
@@ -87,6 +90,23 @@ export function shorten(value: string, max: number): string {
   if (!value || value.length <= max) return value || "";
   const half = Math.floor(max / 2);
   return `${value.substring(0, half)}${ELLIPSIS}${value.substring(value.length - half)}`;
+}
+
+export function spaceFreePercent(total: number | null, used: number | null): number | null {
+  if (total === null || used === null || total <= 0) return null;
+  return Math.min(100, Math.max(0, ((total - used) / total) * 100));
+}
+
+export function freeSpaceTone(free: number): StatusTone {
+  if (free <= FREE_LOW) return "red";
+  if (free <= FREE_WARN) return "orange";
+  return "green";
+}
+
+export function levelTone(value: number, threshold: number): StatusTone {
+  if (value >= threshold) return "red";
+  if (value >= threshold - LEVEL_MARGIN) return "orange";
+  return "green";
 }
 
 export function uptimeTone(uptime: number): StatusTone {

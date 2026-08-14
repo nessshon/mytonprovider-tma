@@ -1,14 +1,9 @@
 import { SC } from "@/lib/colors";
+import { levelTone } from "@/lib/format";
 import styles from "./Gauge.module.css";
 
 const RADIUS = 31;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-
-function gaugeColor(value: number, threshold: number): string {
-  if (value >= threshold) return SC.red;
-  if (value >= threshold - 12) return SC.orange;
-  return SC.green;
-}
 
 interface GaugeProps {
   value: number;
@@ -18,7 +13,7 @@ interface GaugeProps {
 
 export function Gauge({ value, threshold, label }: GaugeProps) {
   const clamped = Math.min(100, Math.max(0, Math.round(value)));
-  const color = gaugeColor(clamped, threshold);
+  const color = SC[levelTone(clamped, threshold)];
   const dash = `${((clamped / 100) * CIRCUMFERENCE).toFixed(1)} ${CIRCUMFERENCE.toFixed(1)}`;
 
   return (

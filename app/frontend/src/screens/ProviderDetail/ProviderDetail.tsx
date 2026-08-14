@@ -22,12 +22,12 @@ import type { Dict } from "@/i18n/types";
 import { toUserFriendly } from "@/lib/address";
 import { ACCENT, SC, tint } from "@/lib/colors";
 import { cx } from "@/lib/cx";
-import { EMPTY, GB, ago, amount, formatMbps, formatPing, formatPrice, formatPriceGram, formatSpace, formatTime, shorten, uptimeTone } from "@/lib/format";
+import { EMPTY, GB, ago, amount, formatMbps, formatPing, formatPrice, formatPriceGram, formatSpace, formatTime, freeSpaceTone, shorten, spaceFreePercent, uptimeTone } from "@/lib/format";
 import { describeStatus } from "@/lib/status";
 import { useAuth } from "@/stores/auth";
 import { useCatalog } from "@/stores/catalog";
 import { useSubscriptions } from "@/stores/subscriptions";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { type Field, FieldCard } from "./FieldCard";
 import { OwnerPanel } from "./OwnerPanel";
@@ -60,6 +60,19 @@ function providerFields(p: Provider, t: Dict): Field[] {
   ];
 }
 
+function spaceLabel(p: Provider, t: Dict): ReactNode {
+  const free = spaceFreePercent(p.telemetry.totalSpace, p.telemetry.usedSpace);
+  if (free === null) return t.totalSpace;
+  return (
+    <>
+      {t.totalSpace}{" "}
+      <b className={styles.fieldMark} style={{ color: SC[freeSpaceTone(free)] }}>
+        {`${Math.round(free)}%`}
+      </b>
+    </>
+  );
+}
+
 function hardwareFields(p: Provider, t: Dict): Field[] {
   const tel = p.telemetry;
   const ram = tel.usageRam != null && tel.totalRam != null ? `${amount(tel.usageRam)} / ${amount(tel.totalRam)} Gb` : EMPTY;
@@ -72,7 +85,7 @@ function hardwareFields(p: Provider, t: Dict): Field[] {
     { label: t.cpuNumber, value: tel.cpuCount != null ? String(tel.cpuCount) : EMPTY },
     { label: t.cpuVirtual, value: tel.cpuVirtual == null ? EMPTY : tel.cpuVirtual ? t.yes : t.no },
     { label: t.ram, value: ram },
-    { label: t.totalSpace, value: space },
+    { label: spaceLabel(p, t), value: space },
   ];
 }
 
@@ -142,8 +155,8 @@ export function ProviderDetail() {
           </button>
         </CopyRow>
         <ExplorerAddressRow label={t.address} address={toUserFriendly(provider.address)} divider />
-        {providerFields(provider, t).map((field) => (
-          <FieldRow key={field.label} label={field.label} value={field.value} divider />
+        {providerFields(provider, t).map((field, index) => (
+          <FieldRow key={index} label={field.label} value={field.value} divider />
         ))}
       </div>
 
