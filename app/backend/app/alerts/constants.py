@@ -14,5 +14,5 @@ DEFAULT_THRESHOLDS: dict[str, float] = {
     AlertType.RAM_HIGH.value: 90,
     AlertType.NETWORK_HIGH.value: 90,
     AlertType.DISK_LOAD_HIGH.value: 90,
-    AlertType.DISK_SPACE_LOW.value: 90,
+    AlertType.DISK_SPACE_LOW.value: 85,
 }

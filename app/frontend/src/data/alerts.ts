@@ -20,6 +20,7 @@ export const ALERT_TYPES: AlertType[] = [
 ];
 
 export const DEFAULT_THRESHOLD = 90;
+const THRESHOLD_OVERRIDES: Partial<Record<AlertKey, number>> = { disk_space_low: 85 };
 export const THRESHOLD_MIN = 30;
 export const THRESHOLD_MAX = 100;
 
@@ -34,6 +35,6 @@ export function defaultAlertTypes(): AlertTypeMap {
 
 export function defaultThresholds(): ThresholdMap {
   const map: ThresholdMap = {};
-  for (const type of ALERT_TYPES) if (type.threshold) map[type.key] = DEFAULT_THRESHOLD;
+  for (const type of ALERT_TYPES) if (type.threshold) map[type.key] = THRESHOLD_OVERRIDES[type.key] ?? DEFAULT_THRESHOLD;
   return map;
 }
