@@ -15,7 +15,7 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { key: "list", labelKey: "list", on: "grid", off: "grid", fill: true },
-  { key: "subs", labelKey: "subs", on: "bellSolid", off: "bell", fill: false },
+  { key: "subs", labelKey: "subs", on: "bell", off: "bell", fill: true },
   { key: "fav", labelKey: "fav", on: "star", off: "star", fill: true },
 ];
 
