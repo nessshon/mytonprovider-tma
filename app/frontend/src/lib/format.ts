@@ -83,7 +83,7 @@ export function formatMbps(bytesPerSec: number | null): string {
 }
 
 export function formatPing(ms: number | null): string {
-  return ms && ms > 0 && ms < PING_MAX ? `${ms} ms` : EMPTY;
+  return ms && ms > 0 && ms < PING_MAX ? `${Math.round(ms)} ms` : EMPTY;
 }
 
 export function shorten(value: string, max: number): string {
