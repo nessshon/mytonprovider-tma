@@ -19,12 +19,13 @@ from sqlalchemy import Row
 
 from app import config
 from app.alerts import AlertColor
-from app.bot.translator import t
-from app.utils import format_amount, short_key, utcnow
+from app.bot.translator import bytes_unit, t
+from app.utils import format_amount, short_address, short_key, user_friendly, utcnow
 
 APP_LOGO = "5345821286524301151"
 BAG_LOGO = "5818955300463447293"
 GRAM_LOGO = "5258138919291101825"
+TRUSTED_MARK = "5208677899816679571"
 OPEN_APP = "5764638872000533034"
 THRESHOLD_RED = "5240431636713065543"
 THRESHOLD_GREEN = "5240378276039379068"
@@ -38,10 +39,26 @@ COLOR_EMOJI = {
     AlertColor.ORANGE: (THRESHOLD_ORANGE, "\U0001f7e0"),
 }
 
-EXPLORERS = {
+TX_EXPLORERS = {
     "tonscan": "https://tonscan.org/tx/{tx_hash}",
     "tonviewer": "https://tonviewer.com/transaction/{tx_hash}",
 }
+
+ADDRESS_EXPLORERS = {
+    "tonscan": "https://tonscan.org/address/{address}",
+    "tonviewer": "https://tonviewer.com/{address}",
+}
+
+BAG_GATEWAY = "https://mytonstorage.org/api/v1/gateway/{bag_id}"
+
+SIZE_UNITS = ((1024**3, "size_gb"), (1024**2, "size_mb"), (1024, "size_kb"))
+
+
+class Bag(NamedTuple):
+    bag_id: str
+    address: str
+    owner: str | None
+    size: int | None
 
 
 def custom_emoji(emoji_id: str, fallback: str) -> str:
@@ -54,7 +71,15 @@ def provider_url(pubkey: str) -> str:
 
 def explorer_url(explorer: str, tx_hash: str) -> str:
     tx_hex = base64.b64decode(tx_hash).hex()
-    return EXPLORERS.get(explorer, EXPLORERS["tonviewer"]).format(tx_hash=tx_hex)
+    return TX_EXPLORERS.get(explorer, TX_EXPLORERS["tonviewer"]).format(tx_hash=tx_hex)
+
+
+def address_url(explorer: str, address: str) -> str:
+    return ADDRESS_EXPLORERS.get(explorer, ADDRESS_EXPLORERS["tonviewer"]).format(address=address)
+
+
+def address_link(explorer: str, address: str) -> str:
+    return f'<a href="{address_url(explorer, address)}">{short_address(address)}</a>'
 
 
 def provider_link(pubkey: str) -> str:
@@ -82,13 +107,26 @@ def alert(lang: str, title: str, pubkey: str, color: AlertColor) -> str:
     return f"{emoji} <b>{title}</b>\n\n<b>{t(lang, 'alert_provider')}</b> {provider_link(pubkey)}"
 
 
-def bag(lang: str, pubkey: str, bag_id: str) -> str:
+def _size(lang: str, size: int) -> str:
+    for scale, code in SIZE_UNITS:
+        if size >= scale:
+            return t(lang, code).format(v=format_amount(size / scale))
+    return t(lang, "size_bytes").format(v=size, unit=bytes_unit(lang, size))
+
+
+def bag(lang: str, explorer: str, pubkey: str, item: Bag, trusted: bool) -> str:
     emoji = custom_emoji(BAG_LOGO, "\U0001f4e6")
-    return (
-        f"{emoji} <b>{t(lang, 'bag_added_title')}:</b> {bag_link(bag_id)}\n"
-        f"\n"
-        f"<b>{t(lang, 'alert_provider')}</b> {provider_link(pubkey)}"
-    )
+    lines = [f"{emoji} <b>{t(lang, 'bag_added_title')}</b> {bag_link(item.bag_id)}", ""]
+    if item.size:
+        gateway = BAG_GATEWAY.format(bag_id=item.bag_id.lower())
+        lines.append(f'<b>{t(lang, "bag_content")}</b> <a href="{gateway}">{_size(lang, item.size)}</a>')
+    lines.append(f"<b>{t(lang, 'bag_contract')}</b> {address_link(explorer, item.address)}")
+    if item.owner:
+        mark = " " + custom_emoji(TRUSTED_MARK, "\u2714\ufe0f") if trusted else ""
+        lines.append(f"<b>{t(lang, 'bag_owner')}</b> {address_link(explorer, user_friendly(item.owner))}{mark}")
+    lines.append("")
+    lines.append(f"<b>{t(lang, 'alert_provider')}</b> {provider_link(pubkey)}")
+    return "\n".join(lines)
 
 
 def reward(lang: str, explorer: str, pubkey: str, amount_nano: int, tx_hash: str) -> str:
@@ -106,14 +144,6 @@ def _grouped(lang: str, emoji: str, title: str, items: list[str], pubkey: str) -
         lines.append(t(lang, "list_more").format(n=len(items) - LIST_LIMIT))
     body = "\n".join(lines)
     return f"{emoji} <b>{title}</b>\n\n{body}\n\n<b>{t(lang, 'alert_provider')}</b> {provider_link(pubkey)}"
-
-
-def bags(lang: str, pubkey: str, bag_ids: list[str]) -> str:
-    if len(bag_ids) == 1:
-        return bag(lang, pubkey, bag_ids[0])
-    emoji = custom_emoji(BAG_LOGO, "\U0001f4e6")
-    title = t(lang, "bags_added_title").format(n=len(bag_ids))
-    return _grouped(lang, emoji, title, [bag_link(bag_id) for bag_id in bag_ids], pubkey)
 
 
 def rewards(lang: str, explorer: str, pubkey: str, items: list[tuple[int, str]]) -> str:

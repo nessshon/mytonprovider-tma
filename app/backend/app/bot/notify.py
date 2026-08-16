@@ -11,7 +11,7 @@ from app.bot import bot, render, sender
 from app.bot.translator import t
 from app.db.models import UserModel
 from app.db.repos import SubscriptionRepo
-from app.utils import utcnow
+from app.utils import user_friendly, utcnow
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +31,12 @@ async def restarted(user: UserModel, service: str, pubkey: str) -> bool:
     return await _deliver(user, render.alert(user.lang, title, pubkey, AlertColor.ORANGE))
 
 
-async def bags_added(session: AsyncSession, pubkey: str, bag_ids: list[str]) -> None:
+async def bags_added(session: AsyncSession, pubkey: str, items: list[render.Bag]) -> None:
+    owners = {item.bag_id: user_friendly(item.owner) for item in items if item.owner}
     for user in await _subscribers(session, pubkey, AlertType.BAG_ADDED):
-        await _deliver(user, render.bags(user.lang, pubkey, bag_ids))
+        for item in items:
+            trusted = owners.get(item.bag_id) in user.trusted_addresses
+            await _deliver(user, render.bag(user.lang, user.explorer, pubkey, item, trusted))
 
 
 async def rewards_received(session: AsyncSession, pubkey: str, rewards: list[tuple[int, str]]) -> None:

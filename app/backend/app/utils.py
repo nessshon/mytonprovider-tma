@@ -1,3 +1,4 @@
+import base64
 import html
 import time
 from datetime import datetime, timedelta, timezone
@@ -19,6 +20,30 @@ def format_amount(value: float, digits: int = 2, sign: bool = False) -> str:
 
 def short_key(key: str) -> str:
     return html.escape(f"{key[:7]}...{key[-7:]}".upper())
+
+
+def short_address(address: str) -> str:
+    return html.escape(f"{address[:6]}…{address[-6:]}")
+
+
+def _crc16(data: bytes) -> bytes:
+    crc = 0
+    for byte in data:
+        crc ^= byte << 8
+        for _ in range(8):
+            crc = ((crc << 1) ^ 0x1021) & 0xFFFF if crc & 0x8000 else (crc << 1) & 0xFFFF
+    return crc.to_bytes(2, "big")
+
+
+def user_friendly(address: str) -> str:
+    try:
+        raw = base64.b64decode(address.replace("-", "+").replace("_", "/"))
+    except ValueError:
+        return address
+    if len(raw) != 36:
+        return address
+    body = bytes([(raw[0] & 0x80) | 0x51]) + raw[1:34]
+    return base64.urlsafe_b64encode(body + _crc16(body)).decode()
 
 
 def previous_month() -> tuple[datetime, datetime]:

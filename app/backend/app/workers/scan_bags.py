@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from aiohttp import ClientResponseError
 
-from app.bot import notify
+from app.bot import notify, render
 from app.db import session_factory
 from app.db.repos import ContractRepo
 from app.http.mytonprovider import mytonprovider
@@ -40,11 +40,17 @@ class ScanBagsWorker(BaseWorker):
             await contract_repo.upsert(rows, keys=("provider_pubkey", "address"))
             await session.commit()
             if known:
-                by_provider: dict[str, list[str]] = {}
+                by_provider: dict[str, list[render.Bag]] = {}
                 for contract in added:
-                    by_provider.setdefault(contract.provider_pubkey.lower(), []).append(contract.bag_id)
-                for pubkey, bag_ids in by_provider.items():
-                    await notify.bags_added(session, pubkey, bag_ids)
+                    item = render.Bag(
+                        bag_id=contract.bag_id.lower(),
+                        address=contract.address,
+                        owner=contract.owner_address,
+                        size=contract.size,
+                    )
+                    by_provider.setdefault(contract.provider_pubkey.lower(), []).append(item)
+                for pubkey, items in by_provider.items():
+                    await notify.bags_added(session, pubkey, items)
                 await session.commit()
         logger.debug("scanned %d contracts, added %d", len(contracts), len(added))
 
