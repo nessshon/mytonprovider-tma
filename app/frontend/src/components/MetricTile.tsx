@@ -1,8 +1,9 @@
+import type { ReactNode } from "react";
 import styles from "./MetricTile.module.css";
 
 interface MetricTileProps {
   value: string;
-  label: string;
+  label: ReactNode;
   unit?: string;
   valueColor?: string;
 }

@@ -24,3 +24,8 @@
   font-size: 11px;
   color: var(--ts-hint);
 }
+
+.mark {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}

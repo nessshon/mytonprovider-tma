@@ -7,6 +7,7 @@ import { FieldRow } from "@/components/FieldRow";
 import { Icon } from "@/components/Icon/Icon";
 import { MainButton } from "@/components/MainButton";
 import { MetricTile } from "@/components/MetricTile";
+import tileStyles from "@/components/MetricTile.module.css";
 import { PasswordSheet } from "@/components/PasswordSheet";
 import { ProviderHeader } from "@/components/ProviderHeader";
 import { Screen } from "@/components/Screen";
@@ -20,14 +21,14 @@ import { useProblemBags } from "@/hooks/useOwnerData";
 import { useT } from "@/i18n";
 import type { Dict } from "@/i18n/types";
 import { toUserFriendly } from "@/lib/address";
-import { ACCENT, SC, tint } from "@/lib/colors";
+import { ACCENT, SC, rankColor, tint } from "@/lib/colors";
 import { cx } from "@/lib/cx";
-import { EMPTY, GB, ago, amount, formatMbps, formatPing, formatPrice, formatPriceGram, formatSpace, formatTime, freeSpaceTone, shorten, spaceFreePercent, uptimeTone } from "@/lib/format";
+import { EMPTY, GB, ago, amount, formatMbps, formatPing, formatPrice, formatPriceGram, formatSpace, formatTime, shorten, uptimeTone } from "@/lib/format";
 import { describeStatus } from "@/lib/status";
 import { useAuth } from "@/stores/auth";
 import { useCatalog } from "@/stores/catalog";
 import { useSubscriptions } from "@/stores/subscriptions";
-import { type ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { type Field, FieldCard } from "./FieldCard";
 import { OwnerPanel } from "./OwnerPanel";
@@ -60,19 +61,6 @@ function providerFields(p: Provider, t: Dict): Field[] {
   ];
 }
 
-function spaceLabel(p: Provider, t: Dict): ReactNode {
-  const free = spaceFreePercent(p.telemetry.totalSpace, p.telemetry.usedSpace);
-  if (free === null) return t.totalSpace;
-  return (
-    <>
-      {t.totalSpace}{" "}
-      <b className={styles.fieldMark} style={{ color: SC[freeSpaceTone(free)] }}>
-        {`${Math.round(free)}%`}
-      </b>
-    </>
-  );
-}
-
 function hardwareFields(p: Provider, t: Dict): Field[] {
   const tel = p.telemetry;
   const ram = tel.usageRam != null && tel.totalRam != null ? `${amount(tel.usageRam)} / ${amount(tel.totalRam)} Gb` : EMPTY;
@@ -85,7 +73,7 @@ function hardwareFields(p: Provider, t: Dict): Field[] {
     { label: t.cpuNumber, value: tel.cpuCount != null ? String(tel.cpuCount) : EMPTY },
     { label: t.cpuVirtual, value: tel.cpuVirtual == null ? EMPTY : tel.cpuVirtual ? t.yes : t.no },
     { label: t.ram, value: ram },
-    { label: spaceLabel(p, t), value: space },
+    { label: t.totalSpace, value: space },
   ];
 }
 
@@ -106,6 +94,7 @@ export function ProviderDetail() {
   const { pubkey = "" } = useParams();
 
   const providers = useCatalog((s) => s.providers);
+  const ranks = useCatalog((s) => s.ranks);
   const status = useCatalog((s) => s.status);
   const load = useCatalog((s) => s.load);
 
@@ -122,6 +111,7 @@ export function ProviderDetail() {
   }, [load]);
 
   const provider = providers.find((p) => p.pubkey === pubkey);
+  const rank = ranks[pubkey];
 
   useEffect(() => {
     if (status === "ready" && !provider) navigate("/", { replace: true });
@@ -252,7 +242,19 @@ export function ProviderDetail() {
         </div>
 
         <div className={styles.tiles}>
-          <MetricTile value={amount(provider.rating)} label={t.rating} valueColor="var(--ts-accent)" />
+          <MetricTile
+            value={amount(provider.rating)}
+            label={
+              rank ? (
+                <>
+                  {t.rating} <b className={tileStyles.mark} style={{ color: rankColor(rank) }}>{`#${rank}`}</b>
+                </>
+              ) : (
+                t.rating
+              )
+            }
+            valueColor="var(--ts-accent)"
+          />
           <MetricTile value={amount(provider.uptime)} unit="%" label={t.uptime} valueColor={SC[uptimeTone(provider.uptime)]} />
           <MetricTile value={formatPrice(provider.price)} unit="GRAM" label={t.priceUnit} />
         </div>
