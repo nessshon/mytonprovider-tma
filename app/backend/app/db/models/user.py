@@ -16,6 +16,7 @@ class UserModel(BaseModel):
     explorer: Mapped[str] = mapped_column(String(16), nullable=False, default="tonviewer")
 
     favorites: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    trusted_addresses: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     alert_types: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     alert_thresholds: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     alerts_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

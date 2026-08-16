@@ -13,7 +13,7 @@ import { BackendError, backend, type BagPayload } from "@/data/backend";
 import { type StorageContract, readStorageContract } from "@/data/toncenter";
 import { useT } from "@/i18n";
 import type { Dict } from "@/i18n/types";
-import { toUserFriendly } from "@/lib/address";
+import { ADDRESS_RE, RAW_RE, toUserFriendly } from "@/lib/address";
 import { SC, tint } from "@/lib/colors";
 import { cx } from "@/lib/cx";
 import { EMPTY, ago, formatPriceGram, formatSpace, formatTime, shorten } from "@/lib/format";
@@ -26,14 +26,12 @@ import styles from "./BagExplorer.module.css";
 
 const REPORT_BOT = "https://t.me/bagidreport_bot";
 const BAG_ID_RE = /^[0-9a-fA-F]{64}$/;
-const RAW_ADDRESS_RE = /^(0|-1):[0-9a-fA-F]{64}$/i;
-const FRIENDLY_ADDRESS_RE = /^[A-Za-z0-9_-]{48}$/;
 
 type QueryKind = "bag" | "address";
 
 function classify(query: string): QueryKind | null {
   if (BAG_ID_RE.test(query)) return "bag";
-  if (RAW_ADDRESS_RE.test(query) || FRIENDLY_ADDRESS_RE.test(query)) return "address";
+  if (RAW_RE.test(query) || ADDRESS_RE.test(query)) return "address";
   return null;
 }
 

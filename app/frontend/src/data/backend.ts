@@ -47,6 +47,7 @@ interface ProfilePayload {
   theme: ServerTheme;
   explorer: Explorer;
   favorites: string[];
+  trusted_addresses: string[];
   alerts: AlertSettingsPayload;
   subscriptions: SubscriptionEntry[];
 }
@@ -171,6 +172,11 @@ export const backend = {
     request<ProfilePayload>("/api/v1/profile", { method: "PATCH", body: JSON.stringify(patch) }),
   putFavorites: (favorites: string[]) =>
     request<ProfilePayload>("/api/v1/profile/favorites", { method: "PUT", body: JSON.stringify({ favorites }) }),
+  putTrusted: (addresses: string[]) =>
+    request<ProfilePayload>("/api/v1/profile/trusted-addresses", {
+      method: "PUT",
+      body: JSON.stringify({ trusted_addresses: addresses }),
+    }),
   putAlerts: (settings: AlertSettingsPayload) =>
     request<ProfilePayload>("/api/v1/profile/alerts", { method: "PUT", body: JSON.stringify(settings) }),
   subscribe: (pubkey: string, password: string) =>

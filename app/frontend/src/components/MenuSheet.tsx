@@ -10,6 +10,7 @@ import type { Lang } from "@/i18n/types";
 import { isInTelegram } from "@/lib/telegram";
 import { useAuth } from "@/stores/auth";
 import { type Explorer, type Theme, useSettings } from "@/stores/settings";
+import { useTrusted } from "@/stores/trusted";
 import { useNavigate } from "react-router-dom";
 import styles from "./MenuSheet.module.css";
 
@@ -20,6 +21,8 @@ export function MenuSheet({ onClose }: { onClose: () => void }) {
   const theme = useAppliedTheme();
   const lang = useAppliedLang();
   const explorer = useSettings((s) => s.explorer);
+
+  const trustedCount = useTrusted((s) => s.addresses.length);
 
   const loggedIn = useAuth((s) => s.loggedIn);
   const user = useAuth((s) => s.user);
@@ -110,6 +113,23 @@ export function MenuSheet({ onClose }: { onClose: () => void }) {
               </span>
               {t.explorerTitle}
               <span className={styles.tail}>
+                <Icon glyph="chevron" size={16} color="var(--ts-hint)" />
+              </span>
+            </button>
+            <button
+              type="button"
+              className={styles.row}
+              onClick={() => {
+                onClose();
+                navigate("/trusted");
+              }}
+            >
+              <span className={styles.tile}>
+                <Icon glyph="check" size={17} color="var(--ts-on-accent)" />
+              </span>
+              {t.trustedTitle}
+              <span className={styles.tail}>
+                {trustedCount > 0 && <span className={styles.count}>{trustedCount}</span>}
                 <Icon glyph="chevron" size={16} color="var(--ts-hint)" />
               </span>
             </button>

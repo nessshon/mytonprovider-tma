@@ -28,6 +28,7 @@ router = APIRouter(prefix="/profile")
 
 PUBKEY_PATTERN = r"^[0-9a-fA-F]{64}$"
 PUBKEY_RE = re.compile(PUBKEY_PATTERN)
+ADDRESS_RE = re.compile(r"^[A-Za-z0-9_-]{48}$")
 ALERT_TYPES = tuple(alert_type.value for alert_type in AlertType)
 
 Theme: TypeAlias = Literal["auto", "dark", "light"]
@@ -50,6 +51,7 @@ class ProfileResponse(BaseModel):
     theme: Theme
     explorer: Explorer
     favorites: list[str]
+    trusted_addresses: list[str]
     alerts: AlertsSettings
     subscriptions: list[SubscriptionOut]
 
@@ -62,6 +64,10 @@ class ProfilePatch(BaseModel):
 
 class FavoritesRequest(BaseModel):
     favorites: list[str] = Field(max_length=100)
+
+
+class TrustedAddressesRequest(BaseModel):
+    trusted_addresses: list[str] = Field(max_length=100)
 
 
 class SubscribeRequest(BaseModel):
@@ -103,6 +109,7 @@ async def profile_response(session: AsyncSession, user: UserModel) -> ProfileRes
         theme=user.theme,
         explorer=user.explorer,
         favorites=list(user.favorites),
+        trusted_addresses=list(user.trusted_addresses),
         alerts=AlertsSettings(
             enabled=user.alerts_enabled,
             types=list(user.alert_types),
@@ -146,6 +153,20 @@ async def put_favorites(
         if not PUBKEY_RE.match(pubkey):
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid pubkey")
     user.favorites = list(dict.fromkeys(pubkey.lower() for pubkey in body.favorites))
+    await session.commit()
+    return await profile_response(session, user)
+
+
+@router.put("/trusted-addresses")
+async def put_trusted_addresses(
+    body: TrustedAddressesRequest,
+    user: UserModel = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> ProfileResponse:
+    for address in body.trusted_addresses:
+        if not ADDRESS_RE.match(address):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid address")
+    user.trusted_addresses = list(dict.fromkeys(body.trusted_addresses))
     await session.commit()
     return await profile_response(session, user)
 

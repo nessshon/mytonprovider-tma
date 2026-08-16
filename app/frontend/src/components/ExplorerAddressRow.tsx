@@ -1,4 +1,5 @@
 import { CopyRow } from "@/components/CopyRow";
+import { TrustedBadge } from "@/components/TrustedBadge";
 import { explorerAddressUrl } from "@/lib/address";
 import { shorten } from "@/lib/format";
 import { useSettings } from "@/stores/settings";
@@ -17,6 +18,7 @@ export function ExplorerAddressRow({ label, address, divider }: ExplorerAddressR
       <a className={styles.link} href={explorerAddressUrl(address, explorer)} target="_blank" rel="noopener noreferrer">
         {shorten(address, 12)}
       </a>
+      <TrustedBadge address={address} />
     </CopyRow>
   );
 }

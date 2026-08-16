@@ -1,0 +1,107 @@
+import { Card } from "@/components/Card";
+import { EmptyState } from "@/components/EmptyState";
+import { Icon } from "@/components/Icon/Icon";
+import { Screen } from "@/components/Screen";
+import { ScreenHeader } from "@/components/ScreenHeader";
+import { BADGE_SRC } from "@/components/TrustedBadge";
+import { toggleTrusted } from "@/data/sync";
+import { useT } from "@/i18n";
+import { explorerAddressUrl, parseAddress } from "@/lib/address";
+import { cx } from "@/lib/cx";
+import { shorten } from "@/lib/format";
+import { useSettings } from "@/stores/settings";
+import { useTrusted } from "@/stores/trusted";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import styles from "./Trusted.module.css";
+
+type Invalid = "none" | "format" | "duplicate";
+
+export function Trusted() {
+  const t = useT();
+  const navigate = useNavigate();
+  const explorer = useSettings((s) => s.explorer);
+  const addresses = useTrusted((s) => s.addresses);
+
+  const [value, setValue] = useState("");
+  const [invalid, setInvalid] = useState<Invalid>("none");
+
+  const submit = () => {
+    const address = parseAddress(value.trim());
+    if (address === null) {
+      setInvalid("format");
+      return;
+    }
+    if (addresses.includes(address)) {
+      setInvalid("duplicate");
+      return;
+    }
+    toggleTrusted(address);
+    setValue("");
+  };
+
+  const header = <ScreenHeader title={t.trustedTitle} onBack={() => navigate(-1)} />;
+
+  return (
+    <Screen header={header}>
+      <div className={cx(styles.field, invalid !== "none" && styles.fieldError)}>
+        <input
+          className={styles.input}
+          value={value}
+          placeholder={t.trustedPlaceholder}
+          enterKeyHint="done"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          onChange={(event) => {
+            setValue(event.target.value);
+            setInvalid("none");
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") submit();
+          }}
+        />
+        <button type="button" className={styles.add} disabled={!value.trim()} onClick={submit}>
+          {t.trustedAdd}
+        </button>
+      </div>
+      <div className={styles.error}>
+        {invalid === "format" ? t.trustedInvalid : invalid === "duplicate" ? t.trustedDuplicate : ""}
+      </div>
+
+      {addresses.length === 0 ? (
+        <EmptyState glyph="check" title={t.trustedEmptyTitle} desc={t.trustedEmptyDesc} />
+      ) : (
+        <>
+          <div className={styles.count}>{t.trustedCount(addresses.length)}</div>
+          <Card>
+            {addresses.map((address, index) => (
+              <div key={address} className={cx(styles.row, index > 0 && styles.divider)}>
+                <a
+                  className={styles.link}
+                  href={explorerAddressUrl(address, explorer)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {shorten(address, 14)}
+                </a>
+                <button
+                  type="button"
+                  aria-label={t.trustedRemove}
+                  className={styles.remove}
+                  onClick={() => toggleTrusted(address)}
+                >
+                  <Icon glyph="close" size={16} color="var(--ts-danger)" stroke={2} />
+                </button>
+              </div>
+            ))}
+          </Card>
+          <div className={styles.note}>
+            {t.trustedNote}
+            <img className={styles.noteBadge} src={BADGE_SRC} alt="" />
+          </div>
+        </>
+      )}
+    </Screen>
+  );
+}

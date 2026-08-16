@@ -103,7 +103,15 @@
 
 .tail {
   display: flex;
+  align-items: center;
+  gap: 7px;
   margin-left: auto;
+}
+
+.count {
+  font-size: 15px;
+  color: var(--ts-hint);
+  font-variant-numeric: tabular-nums;
 }
 
 
