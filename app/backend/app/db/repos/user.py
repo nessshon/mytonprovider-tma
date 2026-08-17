@@ -6,6 +6,7 @@ from sqlalchemy import Row, func, select
 from app.alerts import DEFAULT_THRESHOLDS
 from app.db.models import UserModel
 from app.db.repos._base import BaseRepo
+from app.utils import utcnow
 
 DEFAULT_ALERT_TYPES = [
     "telemetry_lost",
@@ -41,10 +42,35 @@ class UserRepo(BaseRepo[UserModel]):
         )
         return await self.session.get_one(UserModel, user_id)
 
+    async def visited(
+        self,
+        user_id: int,
+        lang: str | None,
+        username: str | None,
+        fullname: str | None,
+        photo_url: str | None,
+    ) -> UserModel:
+        model = await self.get_or_create(user_id, lang)
+        if username:
+            model.username = username[:32]
+        if fullname:
+            model.fullname = fullname[:129]
+        if photo_url and len(photo_url) <= 255:
+            model.photo_url = photo_url
+        model.last_seen_at = utcnow()
+        return model
+
+    async def touch(self, user_id: int) -> UserModel | None:
+        model = await self.get(user_id)
+        if model is not None:
+            model.last_seen_at = utcnow()
+        return model
+
     async def counters(self) -> Row[Any]:
         stmt = select(
             func.count().label("total"),
-            func.count().filter(UserModel.blocked_at.is_not(None)).label("blocked"),
+            func.count().filter(UserModel.state != "member").label("kicked"),
+            func.count().filter(UserModel.banned_at.is_not(None)).label("banned"),
         ).select_from(UserModel)
         result = await self.session.execute(stmt)
         return result.one()

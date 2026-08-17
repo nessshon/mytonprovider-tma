@@ -97,7 +97,7 @@ class CheckAlertsWorker(BaseWorker):
                 continue
             if await notify.restarted(user, service, provider.pubkey):
                 self.notified_restart.add(key)
-            if user.blocked_at is not None:
+            if not user.reachable:
                 return
 
 

@@ -35,7 +35,7 @@ export function useLogin() {
       .then(async (auth) => {
         if (!auth) return;
         const { token } = await backend.authWidget(auth.idToken);
-        login(fromWidgetClaims(auth.user), auth.idToken);
+        login(fromWidgetClaims(auth.user));
         useAuth.getState().setToken(token);
         await hydrateFromServer(true);
         notify("success");

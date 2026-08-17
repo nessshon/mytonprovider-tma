@@ -11,10 +11,13 @@ export interface AuthUser {
 interface AuthState {
   loggedIn: boolean;
   user: AuthUser | null;
-  idToken: string | null;
   token: string | null;
-  login: (user: AuthUser, idToken?: string) => void;
+  banned: boolean;
+  isAdmin: boolean;
+  login: (user: AuthUser) => void;
   setToken: (token: string | null) => void;
+  setBanned: (banned: boolean) => void;
+  setAdmin: (isAdmin: boolean) => void;
   logout: () => void;
 }
 
@@ -35,15 +38,19 @@ export const useAuth = create<AuthState>()(
     (set) => ({
       loggedIn: false,
       user: null,
-      idToken: null,
       token: null,
-      login: (user, idToken) => set({ loggedIn: true, user, idToken: idToken ?? null }),
+      banned: false,
+      isAdmin: false,
+      login: (user) => set({ loggedIn: true, user }),
       setToken: (token) => set({ token }),
-      logout: () => set({ loggedIn: false, user: null, idToken: null, token: null }),
+      setBanned: (banned) => set({ banned }),
+      setAdmin: (isAdmin) => set({ isAdmin }),
+      logout: () => set({ loggedIn: false, user: null, token: null, banned: false, isAdmin: false }),
     }),
     {
       name: "mtp-auth",
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({ loggedIn: state.loggedIn, user: state.user, token: state.token }),
       skipHydration: true,
     },
   ),

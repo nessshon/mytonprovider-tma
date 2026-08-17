@@ -1,9 +1,18 @@
 import { BackendError, backend } from "@/data/backend";
-import { getInitDataRaw, isInTelegram } from "@/lib/telegram";
+import { getInitDataRaw, getTelegramUser, isInTelegram } from "@/lib/telegram";
 import { consumeRedirectCode, redirectUri } from "@/lib/telegramLogin";
 import { hydrateFromServer } from "@/data/sync";
 import { makeAuthUser, useAuth } from "@/stores/auth";
 import { useSubscriptions } from "@/stores/subscriptions";
+
+function tokenUserId(token: string): number | null {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1])) as { sub?: unknown };
+    return Number(payload.sub) || null;
+  } catch {
+    return null;
+  }
+}
 
 async function finishRedirectLogin(code: string): Promise<void> {
   const auth = useAuth.getState();
@@ -21,8 +30,15 @@ export async function establishSession(): Promise<void> {
     } else if (isInTelegram()) {
       const raw = getInitDataRaw();
       if (!raw) return;
-      const { token } = await backend.authTelegram(raw);
-      auth.setToken(token);
+      try {
+        const { token } = await backend.authTelegram(raw);
+        auth.setToken(token);
+      } catch (error) {
+        if (!(error instanceof BackendError && error.status === 401)) throw error;
+        if (!auth.token || tokenUserId(auth.token) !== getTelegramUser()?.id) throw error;
+        const { token } = await backend.refresh();
+        auth.setToken(token);
+      }
     } else if (auth.token) {
       const { token } = await backend.refresh();
       auth.setToken(token);
@@ -32,6 +48,7 @@ export async function establishSession(): Promise<void> {
     }
     await hydrateFromServer(true);
   } catch (error) {
+    if (error instanceof BackendError && error.detail === "Banned") auth.setBanned(true);
     console.error("backend session failed", error);
     if (!isInTelegram() && error instanceof BackendError && error.status === 401) auth.logout();
   }

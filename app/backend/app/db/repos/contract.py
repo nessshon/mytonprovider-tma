@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import ColumnElement, Row, distinct, func, select
+from sqlalchemy import ColumnElement, Row, desc, func, select
 
 from app.db.models import ContractModel
 from app.db.repos._base import BaseRepo
@@ -56,9 +56,42 @@ class ContractRepo(BaseRepo[ContractModel]):
         return result.scalars().all(), total
 
     async def counters(self) -> Row[Any]:
+        unique = (
+            select(
+                func.count().label("rows"),
+                func.max(ContractModel.size).label("size"),
+            )
+            .group_by(ContractModel.bag_id)
+            .subquery()
+        )
         stmt = select(
-            func.count().label("total"),
-            func.count(distinct(ContractModel.bag_id)).label("bags"),
-        ).select_from(ContractModel)
+            func.coalesce(func.sum(unique.c.rows), 0).label("total"),
+            func.count().label("bags"),
+            func.coalesce(func.sum(unique.c.size), 0).label("size"),
+        )
         result = await self.session.execute(stmt)
         return result.one()
+
+    async def top_owners(self, limit: int) -> Sequence[Row[Any]]:
+        unique = (
+            select(
+                ContractModel.owner_address.label("owner"),
+                ContractModel.bag_id,
+                func.max(ContractModel.size).label("size"),
+            )
+            .where(ContractModel.owner_address.is_not(None))
+            .group_by(ContractModel.owner_address, ContractModel.bag_id)
+            .subquery()
+        )
+        stmt = (
+            select(
+                unique.c.owner,
+                func.count().label("bags"),
+                func.coalesce(func.sum(unique.c.size), 0).label("size"),
+            )
+            .group_by(unique.c.owner)
+            .order_by(desc("size"))
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        return result.all()

@@ -8,7 +8,7 @@ from sqlalchemy import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.alerts import disk_space_percent, evaluate, net_load_percent
-from app.api.auth import current_user_id
+from app.api.auth import current_user_id, deny_banned
 from app.db import get_session
 from app.db.models import ProviderModel, UserModel
 from app.db.repos import ContractRepo, ProviderHistoryRepo, ProviderRepo, SubscriptionRepo, UserRepo
@@ -132,6 +132,7 @@ async def require_access(
     provider = await ProviderRepo(session).get(key)
     if user is None or provider is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Provider data not found")
+    deny_banned(user)
     if subscription.telemetry_pass != provider.telemetry_pass:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Password changed")
     return OwnerAccess(user=user, provider=provider)

@@ -20,7 +20,7 @@ from sqlalchemy import Row
 from app import config
 from app.alerts import AlertColor
 from app.bot.translator import bytes_unit, t
-from app.utils import format_amount, short_address, short_key, user_friendly, utcnow
+from app.utils import address_url, format_amount, short_address, short_key, spaced, user_friendly, utcnow
 
 APP_LOGO = "5345821286524301151"
 BAG_LOGO = "5818955300463447293"
@@ -42,11 +42,6 @@ COLOR_EMOJI = {
 TX_EXPLORERS = {
     "tonscan": "https://tonscan.org/tx/{tx_hash}",
     "tonviewer": "https://tonviewer.com/transaction/{tx_hash}",
-}
-
-ADDRESS_EXPLORERS = {
-    "tonscan": "https://tonscan.org/address/{address}",
-    "tonviewer": "https://tonviewer.com/{address}",
 }
 
 BAG_GATEWAY = "https://mytonstorage.org/api/v1/gateway/{bag_id}"
@@ -72,10 +67,6 @@ def provider_url(pubkey: str) -> str:
 def explorer_url(explorer: str, tx_hash: str) -> str:
     tx_hex = base64.b64decode(tx_hash).hex()
     return TX_EXPLORERS.get(explorer, TX_EXPLORERS["tonviewer"]).format(tx_hash=tx_hex)
-
-
-def address_url(explorer: str, address: str) -> str:
-    return ADDRESS_EXPLORERS.get(explorer, ADDRESS_EXPLORERS["tonviewer"]).format(address=address)
 
 
 def address_link(explorer: str, address: str) -> str:
@@ -237,10 +228,6 @@ def _listing(lines: Sequence[str]) -> list[RichBlockUnion]:
     return [RichBlockPreformatted(text="\n".join(lines))]
 
 
-def _spaced(value: int) -> str:
-    return f"{value:,}".replace(",", " ")
-
-
 def _version_blocks(versions: Sequence[tuple[str, Sequence[Row[Any]]]]) -> list[RichBlockUnion]:
     blocks: list[RichBlockUnion] = []
     for program, rows in versions:
@@ -303,8 +290,9 @@ def stats(data: Stats) -> InputRichMessage:
         _table(
             [
                 ("Пользователей", str(data.users.total)),
-                ("Активные", str(data.users.total - data.users.blocked)),
-                ("Заблокировали", str(data.users.blocked)),
+                ("Активные", str(data.users.total - data.users.kicked)),
+                ("Остановили бота", str(data.users.kicked)),
+                ("Забанены", str(data.users.banned)),
                 ("Следят за провайдером", f"{data.subscribers}/{data.users.total}"),
             ]
         )
@@ -317,9 +305,9 @@ def stats(data: Stats) -> InputRichMessage:
         _table(
             [
                 ("Размер", f"{data.db_size / 1024**2:.0f} МБ"),
-                ("Снимков телеметрии", _spaced(data.snapshots)),
-                ("Контрактов бэгов", _spaced(data.contracts.total)),
-                ("Уникальных бэгов", _spaced(data.contracts.bags)),
+                ("Снимков телеметрии", spaced(data.snapshots)),
+                ("Контрактов бэгов", spaced(data.contracts.total)),
+                ("Уникальных бэгов", spaced(data.contracts.bags)),
             ],
             "База",
         )

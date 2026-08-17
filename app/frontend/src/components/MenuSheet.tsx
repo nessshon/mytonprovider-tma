@@ -26,6 +26,7 @@ export function MenuSheet({ onClose }: { onClose: () => void }) {
 
   const loggedIn = useAuth((s) => s.loggedIn);
   const user = useAuth((s) => s.user);
+  const isAdmin = useAuth((s) => s.isAdmin);
   const inTelegram = isInTelegram();
 
   return (
@@ -100,6 +101,21 @@ export function MenuSheet({ onClose }: { onClose: () => void }) {
           />
 
           <div className={styles.group}>
+            {isAdmin && (
+              <a
+                className={styles.row}
+                href={`/admin/#theme=${theme}`}
+                onClick={onClose}
+              >
+                <span className={styles.tile}>
+                  <Icon glyph="sliders" size={17} color="var(--ts-on-accent)" />
+                </span>
+                {t.adminPanel}
+                <span className={styles.tail}>
+                  <Icon glyph="chevron" size={16} color="var(--ts-hint)" />
+                </span>
+              </a>
+            )}
             <button
               type="button"
               className={styles.row}

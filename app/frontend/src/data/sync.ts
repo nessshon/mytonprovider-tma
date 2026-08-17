@@ -1,4 +1,4 @@
-import { type AlertSettingsPayload, backend } from "@/data/backend";
+import { type AlertSettingsPayload, BackendError, backend } from "@/data/backend";
 import type { Explorer, Theme } from "@/stores/settings";
 import { ALERT_TYPES, DEFAULT_THRESHOLD, type AlertTypeMap, type ThresholdMap } from "@/data/alerts";
 import { normalizeLang } from "@/i18n";
@@ -48,7 +48,15 @@ function merge(remote: string[], local: string[]): string[] {
 export async function hydrateFromServer(adoptPreferences = false): Promise<void> {
   flushAlerts();
   await chain;
-  let profile = await backend.profile();
+  let profile: Awaited<ReturnType<typeof backend.profile>>;
+  try {
+    profile = await backend.profile();
+  } catch (error) {
+    if (error instanceof BackendError && error.detail === "Banned") useAuth.getState().setBanned(true);
+    throw error;
+  }
+  useAuth.getState().setBanned(false);
+  useAuth.getState().setAdmin(profile.is_admin);
   if (!localStorage.getItem(MIGRATED_KEY)) {
     const favorites = useFavorites.getState().favorites;
     const trusted = useTrusted.getState().addresses;

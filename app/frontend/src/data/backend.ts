@@ -5,10 +5,12 @@ const BACKEND_BASE = import.meta.env.VITE_BACKEND_BASE ?? (import.meta.env.DEV ?
 
 export class BackendError extends Error {
   status: number;
+  detail: string;
 
-  constructor(status: number, message: string) {
-    super(message);
+  constructor(status: number, detail: string) {
+    super(`Backend failed with ${status}: ${detail}`);
     this.status = status;
+    this.detail = detail;
   }
 }
 
@@ -23,7 +25,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     },
   });
   if (!response.ok) {
-    throw new BackendError(response.status, `Backend ${path} failed with ${response.status}`);
+    const body: unknown = await response.json().catch(() => null);
+    const detail = (body as { detail?: unknown } | null)?.detail;
+    throw new BackendError(response.status, typeof detail === "string" ? detail : path);
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
@@ -43,6 +47,7 @@ export interface AlertSettingsPayload {
 }
 
 interface ProfilePayload {
+  is_admin: boolean;
   language_code: string;
   theme: ServerTheme;
   explorer: Explorer;
@@ -64,7 +69,6 @@ interface OwnerLoad {
   net_mbps: number | null;
   net_pct: number | null;
   disk: number | null;
-  disk_space: number | null;
 }
 
 export interface OwnerTriggerEntry {

@@ -50,7 +50,7 @@ class SendReportsWorker(BaseWorker):
         if marker is not None and marker.notified_at >= end:
             return
         first, last = await self.provider_history_repo.bounds(pubkey, start, end)
-        if first is None or last is None:
+        if first is None or last is None or first.archived_at == last.archived_at:
             return
         earned = max(0, last.earned - first.earned)
         traffic_in = max(0, last.traffic_in - first.traffic_in)

@@ -18,6 +18,20 @@ def format_amount(value: float, digits: int = 2, sign: bool = False) -> str:
     return f"{value:{spec}}".rstrip("0").rstrip(".")
 
 
+ADDRESS_EXPLORERS = {
+    "tonscan": "https://tonscan.org/address/{address}",
+    "tonviewer": "https://tonviewer.com/{address}",
+}
+
+
+def address_url(explorer: str, address: str) -> str:
+    return ADDRESS_EXPLORERS.get(explorer, ADDRESS_EXPLORERS["tonviewer"]).format(address=address)
+
+
+def spaced(value: int) -> str:
+    return f"{value:,}".replace(",", " ")
+
+
 def short_key(key: str) -> str:
     return html.escape(f"{key[:7]}...{key[-7:]}".upper())
 

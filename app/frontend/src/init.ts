@@ -11,6 +11,7 @@ import {
   miniApp,
   backButton,
   settingsButton,
+  swipeBehavior,
 } from "@tma.js/sdk-react";
 
 export function init(options: {
@@ -54,6 +55,8 @@ export function init(options: {
 
   backButton.mount.ifAvailable();
   settingsButton.mount.ifAvailable();
+  swipeBehavior.mount.ifAvailable();
+  swipeBehavior.disableVertical.ifAvailable();
   initData.restore();
 
   if (miniApp.mount.isAvailable()) {

@@ -11,6 +11,7 @@ from app import config
 from app.alerts import THRESHOLD_MAX, THRESHOLD_MIN, AlertType
 from app.api.auth import (
     current_user_id,
+    deny_banned,
     hash_telemetry_pass,
     record_provider_failure,
     reset_subscribe_attempts,
@@ -47,6 +48,7 @@ class SubscriptionOut(BaseModel):
 
 
 class ProfileResponse(BaseModel):
+    is_admin: bool
     language_code: str
     theme: Theme
     explorer: Explorer
@@ -86,6 +88,7 @@ async def current_user(
     user = await UserRepo(session).get(user_id)
     if user is None:
         raise unauthorized("Unknown user")
+    deny_banned(user)
     return user
 
 
@@ -105,6 +108,7 @@ def subscription_out(subscription: SubscriptionModel) -> SubscriptionOut:
 async def profile_response(session: AsyncSession, user: UserModel) -> ProfileResponse:
     subscriptions = await SubscriptionRepo(session).all_by_user(user.id)
     return ProfileResponse(
+        is_admin=user.id in config.ADMIN_IDS,
         language_code=user.lang,
         theme=user.theme,
         explorer=user.explorer,

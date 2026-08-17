@@ -14,6 +14,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app import config
+from app.db.models import UserModel
 
 SESSION_TTL = timedelta(days=3)
 INIT_DATA_MAX_AGE = timedelta(hours=1)
@@ -71,6 +72,11 @@ def record_provider_failure(pubkey: str) -> None:
 
 def unauthorized(detail: str) -> HTTPException:
     return HTTPException(status.HTTP_401_UNAUTHORIZED, detail)
+
+
+def deny_banned(user: UserModel) -> None:
+    if user.banned_at is not None:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Banned")
 
 
 def verify_init_data(init_data: str) -> WebAppInitData:
@@ -149,11 +155,8 @@ def current_user_id(
             algorithms=["HS256"],
             options={"require": ["exp"]},
         )
-    except jwt.PyJWTError as error:
-        raise unauthorized("Invalid session token") from error
-    try:
         return int(payload["sub"])
-    except (KeyError, TypeError, ValueError) as error:
+    except (jwt.PyJWTError, KeyError, TypeError, ValueError) as error:
         raise unauthorized("Invalid session token") from error
 
 

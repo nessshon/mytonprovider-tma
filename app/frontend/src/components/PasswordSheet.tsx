@@ -78,7 +78,7 @@ export function PasswordSheet({ pubkey, onClose }: PasswordSheetProps) {
         track(setTimeout(close, SUCCESS_MS));
       })
       .catch((error: unknown) => {
-        if (error instanceof BackendError && error.status === 403) {
+        if (error instanceof BackendError && error.detail === "Wrong password") {
           attempts.current += 1;
           if (attempts.current >= MAX_ATTEMPTS) lockFor(LOCK_MS);
           else fail("wrong");

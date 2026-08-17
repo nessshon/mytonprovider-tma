@@ -5,27 +5,13 @@ from urllib.parse import urlencode
 from fastapi.concurrency import run_in_threadpool
 from starlette.datastructures import URL
 from starlette.exceptions import HTTPException
-from starlette.middleware import Middleware
-from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 from starlette.responses import RedirectResponse, Response
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_403_FORBIDDEN
 from starlette_admin.auth import AdminUser, OAuthProvider
-from starlette_admin.contrib.sqla import Admin, ModelView
 
 from app import config
 from app.api import auth
-from app.db import session_factory
-from app.db.models import (
-    AlertModel,
-    ContractModel,
-    ProviderHistoryModel,
-    ProviderModel,
-    SubscriptionModel,
-    UserModel,
-)
-
-ALLOWED_IDS = frozenset(config.BOT_DEV_IDS + config.BOT_ADMIN_IDS)
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +46,7 @@ class TelegramAuthProvider(OAuthProvider):
         id_token = await auth.exchange_code(code, _external_url(url.path, url.query))
         claims = await run_in_threadpool(auth.verify_id_token, id_token)
         user_id = auth.claims_user_id(claims)
-        if user_id not in ALLOWED_IDS:
+        if user_id not in config.ADMIN_IDS:
             logger.warning("access denied for %s", user_id)
             raise HTTPException(HTTP_403_FORBIDDEN, "Access denied")
         logger.info("logged in: %s", user_id)
@@ -70,7 +56,7 @@ class TelegramAuthProvider(OAuthProvider):
 
     async def authenticate(self, request: Request) -> AdminUser | None:
         user_id = request.session.get("user_id")
-        if user_id not in ALLOWED_IDS:
+        if user_id not in config.ADMIN_IDS:
             return None
         username = request.session.get("username")
         return AdminUser(username=username or str(user_id), photo_url=request.session.get("photo_url"))
@@ -78,23 +64,3 @@ class TelegramAuthProvider(OAuthProvider):
     async def logout(self, request: Request) -> Response | None:
         request.session.clear()
         return None
-
-
-admin = Admin(
-    session_factory,
-    title="MyTONProvider",
-    auth_provider=TelegramAuthProvider(),
-    secret_key=config.JWT_SECRET,
-    middlewares=[
-        Middleware(
-            SessionMiddleware,
-            secret_key=config.JWT_SECRET,
-            path="/admin",
-            max_age=int(auth.SESSION_TTL.total_seconds()),
-            https_only=not config.DEBUG,
-        )
-    ],
-)
-
-for model in (ProviderModel, ProviderHistoryModel, UserModel, SubscriptionModel, AlertModel, ContractModel):
-    admin.add_view(ModelView(model))

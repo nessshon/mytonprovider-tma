@@ -142,7 +142,8 @@ export function useOwnerData(
       .catch((error: unknown) => {
         if (!alive) return;
         setRefreshing(false);
-        if (error instanceof BackendError && error.status === 403) setDenied(true);
+        if (error instanceof BackendError && error.detail === "Banned") useAuth.getState().setBanned(true);
+        else if (error instanceof BackendError && error.status === 403) setDenied(true);
         else {
           setFailed(true);
           console.error("owner data failed", error);

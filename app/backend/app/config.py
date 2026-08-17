@@ -26,6 +26,7 @@ BOT_TOKEN = env.str("BOT_TOKEN")
 BOT_DEV_IDS = env.list("BOT_DEV_IDS", [], subcast=int)
 BOT_ADMIN_IDS = env.list("BOT_ADMIN_IDS", [], subcast=int)
 BOT_USERNAME = env.str("BOT_USERNAME")
+ADMIN_IDS = frozenset(BOT_DEV_IDS + BOT_ADMIN_IDS)
 BOT_WEBHOOK_SECRET = env.str("BOT_WEBHOOK_SECRET")
 DEV_MASTER_PASS = env.str("DEV_MASTER_PASS", "")
 

@@ -29,11 +29,16 @@ async def on_start(message: Message) -> None:
     if message.from_user is None:
         return
     async with session_factory() as session:
-        user = await UserRepo(session).get_or_create(
+        user = await UserRepo(session).visited(
             message.from_user.id,
             message.from_user.language_code,
+            message.from_user.username,
+            message.from_user.full_name,
+            None,
         )
-        user.blocked_at = None
+        if user.banned_at is not None:
+            return
+        user.state = ChatMemberStatus.MEMBER.value
         await session.commit()
 
     logo = render.custom_emoji(render.APP_LOGO, "\U0001f48e")
@@ -62,17 +67,16 @@ async def on_start(message: Message) -> None:
 async def on_chat_member(event: ChatMemberUpdated) -> None:
     if event.chat.type != ChatType.PRIVATE:
         return
-    blocked = event.new_chat_member.status == ChatMemberStatus.KICKED
     async with session_factory() as session:
         user = await UserRepo(session).get(event.from_user.id)
         if user is None:
             return
-        user.blocked_at = utcnow() if blocked else None
+        user.state = event.new_chat_member.status.value
         await session.commit()
 
 
 async def on_stats(message: Message) -> None:
-    if message.from_user is None or message.from_user.id not in (*config.BOT_ADMIN_IDS, *config.BOT_DEV_IDS):
+    if message.from_user is None or message.from_user.id not in config.ADMIN_IDS:
         return
     fresh = utcnow() - LOST_AGE
     async with session_factory() as session:

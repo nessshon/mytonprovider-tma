@@ -1,7 +1,12 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import BigInteger, Boolean, ForeignKey, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.models._base import BaseModel
+
+if TYPE_CHECKING:
+    from app.db.models.user import UserModel
 
 
 class SubscriptionModel(BaseModel):
@@ -19,3 +24,9 @@ class SubscriptionModel(BaseModel):
     )
     telemetry_pass: Mapped[str | None] = mapped_column(String(255))
     alerts_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    user: Mapped["UserModel"] = relationship("UserModel", lazy="raise", viewonly=True)
+
+    @property
+    def has_telemetry_pass(self) -> bool:
+        return self.telemetry_pass is not None
