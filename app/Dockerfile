@@ -7,7 +7,7 @@ RUN corepack enable && pnpm install --frozen-lockfile
 COPY frontend .
 RUN pnpm build
 
-FROM python:3.10-slim
+FROM python:3.12-slim
 WORKDIR /backend
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git \

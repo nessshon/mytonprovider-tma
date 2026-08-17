@@ -5,9 +5,11 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app import api, bot, config, workers
+from app.admin import admin
 from app.http import mytonprovider, toncenter
 
 
@@ -45,6 +47,8 @@ def main() -> None:
     )
     app.add_middleware(GZipMiddleware, minimum_size=1024)
     app.include_router(api.router)
+    admin.mount_to(app)
+    app.add_route("/admin", lambda _request: RedirectResponse("/admin/"))
     app.mount("/", StaticFiles(directory=static_dir, html=True))
 
     uvicorn.run(app, host="0.0.0.0", port=8080)

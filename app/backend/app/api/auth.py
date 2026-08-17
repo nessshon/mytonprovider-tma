@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import hashlib
 import logging
@@ -5,6 +6,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import aiohttp
 import jwt
 from aiogram.utils.web_app import WebAppInitData, safe_parse_webapp_init_data
 from cachetools import TTLCache
@@ -17,6 +19,7 @@ SESSION_TTL = timedelta(days=3)
 INIT_DATA_MAX_AGE = timedelta(hours=1)
 
 OIDC_ISSUER = "https://oauth.telegram.org"
+OIDC_AUTH_URL = "https://oauth.telegram.org/auth"
 OIDC_TOKEN_URL = "https://oauth.telegram.org/token"
 OIDC_JWKS_URL = "https://oauth.telegram.org/.well-known/jwks.json"
 
@@ -97,6 +100,35 @@ def verify_id_token(id_token: str) -> dict[str, Any]:
     except jwt.PyJWTError as error:
         logger.warning("id token rejected: %s: %s", type(error).__name__, error)
         raise unauthorized("Invalid id token") from error
+
+
+async def exchange_code(code: str, redirect_uri: str) -> str:
+    timeout = aiohttp.ClientTimeout(total=15)
+    try:
+        async with (
+            aiohttp.ClientSession(timeout=timeout) as http,
+            http.post(
+                OIDC_TOKEN_URL,
+                data={
+                    "grant_type": "authorization_code",
+                    "code": code,
+                    "redirect_uri": redirect_uri,
+                    "client_id": str(config.TG_CLIENT_ID),
+                    "client_secret": config.TG_CLIENT_SECRET,
+                },
+            ) as response,
+        ):
+            status_code = response.status
+            payload = await response.json(content_type=None)
+    except (aiohttp.ClientError, asyncio.TimeoutError, ValueError):
+        logger.warning("code exchange failed: request error")
+        raise unauthorized("Code exchange failed") from None
+    error = payload.get("error") if isinstance(payload, dict) else None
+    id_token = payload.get("id_token") if isinstance(payload, dict) else None
+    if status_code != 200 or not isinstance(id_token, str):
+        logger.warning("code exchange failed: %s %s", status_code, error)
+        raise unauthorized("Code exchange failed")
+    return id_token
 
 
 def issue_session_token(user_id: int) -> str:

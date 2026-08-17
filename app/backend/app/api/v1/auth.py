@@ -1,12 +1,8 @@
-import asyncio
-
-import aiohttp
 from fastapi import APIRouter, Depends
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app import config
 from app.api import auth
 from app.db import get_session
 from app.db.repos import UserRepo
@@ -53,31 +49,7 @@ async def auth_widget(body: WidgetRequest, session: AsyncSession = Depends(get_s
 
 @router.post("/code")
 async def auth_code(body: CodeRequest, session: AsyncSession = Depends(get_session)) -> AuthResponse:
-    timeout = aiohttp.ClientTimeout(total=15)
-    try:
-        async with (
-            aiohttp.ClientSession(timeout=timeout) as http,
-            http.post(
-                auth.OIDC_TOKEN_URL,
-                data={
-                    "grant_type": "authorization_code",
-                    "code": body.code,
-                    "redirect_uri": body.redirect_uri,
-                    "client_id": str(config.TG_CLIENT_ID),
-                    "client_secret": config.TG_CLIENT_SECRET,
-                },
-            ) as response,
-        ):
-            status = response.status
-            payload = await response.json(content_type=None)
-    except (aiohttp.ClientError, asyncio.TimeoutError, ValueError):
-        auth.logger.warning("code exchange failed: request error")
-        raise auth.unauthorized("Code exchange failed") from None
-    error = payload.get("error") if isinstance(payload, dict) else None
-    id_token = payload.get("id_token") if isinstance(payload, dict) else None
-    if status != 200 or not isinstance(id_token, str):
-        auth.logger.warning("code exchange failed: %s %s", status, error)
-        raise auth.unauthorized("Code exchange failed")
+    id_token = await auth.exchange_code(body.code, body.redirect_uri)
     claims = await run_in_threadpool(auth.verify_id_token, id_token)
     user = await UserRepo(session).get_or_create(auth.claims_user_id(claims), None)
     await session.commit()
