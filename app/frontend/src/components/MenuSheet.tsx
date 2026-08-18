@@ -105,6 +105,8 @@ export function MenuSheet({ onClose }: { onClose: () => void }) {
               <a
                 className={styles.row}
                 href={`/admin/#theme=${theme}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={onClose}
               >
                 <span className={styles.tile}>
