@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Float, String
+from sqlalchemy import BigInteger, Float, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.models._base import BaseModel, UTCDateTime
@@ -51,6 +51,7 @@ class ProviderModel(BaseProviderModel):
 
 class ProviderHistoryModel(BaseProviderModel):
     __tablename__ = "providers_history"
+    __table_args__ = (Index("ix_providers_history_archived_at", "archived_at"),)
 
     pubkey: Mapped[str] = mapped_column(String(64), primary_key=True)
     archived_at: Mapped[datetime] = mapped_column(UTCDateTime, primary_key=True)

@@ -52,6 +52,10 @@ class ProviderRepo(BaseRepo[ProviderModel]):
         return result.all()
 
 
+ROLLUP_HOURLY_AFTER = timedelta(days=1)
+ROLLUP_DAILY_AFTER = timedelta(days=30)
+
+
 class ProviderHistoryRepo(BaseRepo[ProviderHistoryModel]):
     model = ProviderHistoryModel
 
@@ -135,12 +139,7 @@ class ProviderHistoryRepo(BaseRepo[ProviderHistoryModel]):
         return await self.session.scalar(stmt) or 0
 
     async def rollup(self) -> int:
-        tiers = (
-            (timedelta(days=1), 3 * 60 * 60),
-            (timedelta(days=7), 12 * 60 * 60),
-            (timedelta(days=30), 24 * 60 * 60),
-            (timedelta(days=90), 30 * 24 * 60 * 60),
-        )
+        now = utcnow()
         stmt = text("""
         DELETE FROM providers_history
         WHERE (pubkey, archived_at) IN (
@@ -149,18 +148,25 @@ class ProviderHistoryRepo(BaseRepo[ProviderHistoryModel]):
             SELECT
               pubkey, archived_at,
               ROW_NUMBER() OVER (
-                PARTITION BY pubkey, CAST(strftime('%s', archived_at) AS INTEGER) / :bucket
+                PARTITION BY pubkey, CAST(strftime('%s', archived_at) AS INTEGER) / (
+                  CASE WHEN archived_at < :daily THEN :day_bucket ELSE :hour_bucket END
+                )
                 ORDER BY archived_at DESC
               ) AS row_number
             FROM providers_history
-            WHERE archived_at < :cutoff
+            WHERE archived_at < :hourly
           )
           WHERE row_number > 1
-        )""").bindparams(bindparam("cutoff", type_=UTCDateTime()))
+        )""").bindparams(
+            bindparam("hourly", type_=UTCDateTime()),
+            bindparam("daily", type_=UTCDateTime()),
+        )
+        params = {
+            "hourly": now - ROLLUP_HOURLY_AFTER,
+            "daily": now - ROLLUP_DAILY_AFTER,
+            "hour_bucket": int(timedelta(hours=1).total_seconds()),
+            "day_bucket": int(timedelta(days=1).total_seconds()),
+        }
         connection = await self.session.connection()
-        removed = 0
-        for age, bucket_sec in tiers:
-            params = {"cutoff": utcnow() - age, "bucket": bucket_sec}
-            result = await connection.execute(stmt, params)
-            removed += result.rowcount
-        return removed
+        result = await connection.execute(stmt, params)
+        return result.rowcount
