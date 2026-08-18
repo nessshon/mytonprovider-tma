@@ -1,26 +1,19 @@
 import base64
-from collections.abc import Sequence
-from datetime import datetime
-from typing import Any, NamedTuple
+from typing import NamedTuple
 
 from aiogram.types import (
     InputRichMessage,
-    RichBlockDetails,
-    RichBlockPreformatted,
-    RichBlockSectionHeading,
     RichBlockTable,
     RichBlockTableCell,
-    RichBlockUnion,
     RichTextBold,
     RichTextUnion,
     RichTextUrl,
 )
-from sqlalchemy import Row
 
 from app import config
 from app.alerts import AlertColor
 from app.bot.translator import bytes_unit, t
-from app.utils import address_url, format_amount, short_address, short_key, spaced, user_friendly, utcnow
+from app.utils import address_url, format_amount, short_address, short_key, user_friendly
 
 APP_LOGO = "5345821286524301151"
 BAG_LOGO = "5818955300463447293"
@@ -178,139 +171,3 @@ def monthly(
             ),
         ],
     )
-
-
-class Stats(NamedTuple):
-    providers: Row[Any]
-    offline: Sequence[Row[Any]]
-    silent: Sequence[Row[Any]]
-    versions: Sequence[tuple[str, Sequence[Row[Any]]]]
-    users: Row[Any]
-    subscribers: int
-    languages: Sequence[Row[Any]]
-    contracts: Row[Any]
-    snapshots: int
-    db_size: int
-    uptime: float
-
-
-def _span(seconds: float) -> str:
-    minutes = int(seconds // 60)
-    if minutes < 60:
-        return f"{minutes} мин"
-    if minutes < 60 * 24:
-        return f"{minutes // 60} ч"
-    return f"{minutes // (60 * 24)} дн"
-
-
-def _age(moment: datetime | None) -> str:
-    return "" if moment is None else _span((utcnow() - moment).total_seconds())
-
-
-def _heading(title: str) -> RichBlockSectionHeading:
-    return RichBlockSectionHeading(text=RichTextBold(text=title), size=2)
-
-
-def _table(rows: Sequence[tuple[str, RichTextUnion]], caption: str | None = None) -> RichBlockTable:
-    return RichBlockTable(
-        is_bordered=True,
-        is_striped=True,
-        caption=RichTextBold(text=caption) if caption else None,
-        cells=[[rich_cell(label, "left"), rich_cell(value, "right")] for label, value in rows],
-    )
-
-
-def _details(summary: str, blocks: Sequence[RichBlockUnion]) -> RichBlockDetails:
-    return RichBlockDetails(summary=RichTextBold(text=summary), blocks=list(blocks))
-
-
-def _listing(lines: Sequence[str]) -> list[RichBlockUnion]:
-    return [RichBlockPreformatted(text="\n".join(lines))]
-
-
-def _version_blocks(versions: Sequence[tuple[str, Sequence[Row[Any]]]]) -> list[RichBlockUnion]:
-    blocks: list[RichBlockUnion] = []
-    for program, rows in versions:
-        if not rows:
-            continue
-        grouped: dict[str, list[str]] = {}
-        for row in rows:
-            grouped.setdefault(row.githash, []).append(row.pubkey)
-        blocks.append(RichBlockTable(cells=[[rich_cell(RichTextBold(text=program))]]))
-        for githash, pubkeys in sorted(grouped.items(), key=lambda item: len(item[1]), reverse=True):
-            blocks.append(
-                RichBlockDetails(
-                    summary=f"{githash[:9]} · {len(pubkeys)}",
-                    blocks=_listing([short_key(pubkey) for pubkey in pubkeys]),
-                )
-            )
-    return blocks
-
-
-def _build_rows(uptime: float) -> list[tuple[str, RichTextUnion]]:
-    if not (config.APP_REPO and config.APP_COMMIT):
-        return [("Ветка", "неизвестно"), ("Коммит", "неизвестно"), ("Аптайм", _span(uptime))]
-    owner_url, name = config.APP_REPO.rsplit("/", 1)
-    return [
-        ("Автор", RichTextUrl(text=owner_url.rsplit("/", 1)[-1], url=owner_url)),
-        ("Репозиторий", RichTextUrl(text=name, url=config.APP_REPO)),
-        ("Ветка", config.APP_BRANCH),
-        ("Коммит", RichTextUrl(text=config.APP_COMMIT, url=f"{config.APP_REPO}/commit/{config.APP_COMMIT}")),
-        ("Аптайм", _span(uptime)),
-    ]
-
-
-def stats(data: Stats) -> InputRichMessage:
-    counters = data.providers
-    blocks: list[RichBlockUnion] = [
-        _heading("Провайдеры"),
-        _table(
-            [
-                ("Провайдеров", str(counters.total)),
-                ("Онлайн", f"{counters.online}/{counters.total}"),
-                ("Телеметрия", f"{counters.telemetry}/{counters.total}"),
-                ("Пароль задан", f"{counters.passworded}/{counters.total}"),
-            ]
-        ),
-    ]
-    version_blocks = _version_blocks(data.versions)
-    if version_blocks:
-        blocks.append(_details("Версии", version_blocks))
-    for title, rows in (("Офлайн", data.offline), ("Нет телеметрии", data.silent)):
-        if rows:
-            blocks.append(
-                _details(
-                    f"{title} · {len(rows)}",
-                    _listing([f"{short_key(row.pubkey)}  {_age(row.moment)}".rstrip() for row in rows]),
-                )
-            )
-
-    blocks.append(_heading("Пользователи"))
-    blocks.append(
-        _table(
-            [
-                ("Пользователей", str(data.users.total)),
-                ("Активные", str(data.users.total - data.users.kicked)),
-                ("Остановили бота", str(data.users.kicked)),
-                ("Забанены", str(data.users.banned)),
-                ("Следят за провайдером", f"{data.subscribers}/{data.users.total}"),
-            ]
-        )
-    )
-    if data.languages:
-        blocks.append(_table([(row.lang, str(row.count)) for row in data.languages], "Языки"))
-
-    blocks.append(_heading("Система"))
-    blocks.append(
-        _table(
-            [
-                ("Размер", f"{data.db_size / 1024**2:.0f} МБ"),
-                ("Снимков телеметрии", spaced(data.snapshots)),
-                ("Контрактов бэгов", spaced(data.contracts.total)),
-                ("Уникальных бэгов", spaced(data.contracts.bags)),
-            ],
-            "База",
-        )
-    )
-    blocks.append(_table(_build_rows(data.uptime), "Сборка"))
-    return InputRichMessage(blocks=blocks)

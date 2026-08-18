@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 from typing import Any
 
 from sqlalchemy import Row, func, select
@@ -74,10 +73,3 @@ class UserRepo(BaseRepo[UserModel]):
         ).select_from(UserModel)
         result = await self.session.execute(stmt)
         return result.one()
-
-    async def languages(self) -> Sequence[Row[Any]]:
-        stmt = (
-            select(UserModel.lang, func.count().label("count")).group_by(UserModel.lang).order_by(func.count().desc())
-        )
-        result = await self.session.execute(stmt)
-        return result.all()

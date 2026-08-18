@@ -1,5 +1,3 @@
-import time
-
 from aiogram.enums import ChatMemberStatus, ChatType
 from aiogram.types import (
     ChatMemberUpdated,
@@ -11,18 +9,10 @@ from aiogram.types import (
 )
 
 from app import config
-from app.alerts import LOST_AGE
 from app.bot import render
 from app.bot.translator import t
-from app.db import db_size, session_factory
-from app.db.repos import (
-    ContractRepo,
-    ProviderHistoryRepo,
-    ProviderRepo,
-    SubscriptionRepo,
-    UserRepo,
-)
-from app.utils import STARTED, utcnow
+from app.db import session_factory
+from app.db.repos import UserRepo
 
 
 async def on_start(message: Message) -> None:
@@ -73,29 +63,3 @@ async def on_chat_member(event: ChatMemberUpdated) -> None:
             return
         user.state = event.new_chat_member.status.value
         await session.commit()
-
-
-async def on_stats(message: Message) -> None:
-    if message.from_user is None or message.from_user.id not in config.ADMIN_IDS:
-        return
-    fresh = utcnow() - LOST_AGE
-    async with session_factory() as session:
-        provider_repo = ProviderRepo(session)
-        user_repo = UserRepo(session)
-        data = render.Stats(
-            providers=await provider_repo.counters(fresh),
-            offline=await provider_repo.offline(fresh),
-            silent=await provider_repo.silent(fresh),
-            versions=(
-                ("ton-storage", await provider_repo.storage_versions()),
-                ("ton-storage-provider", await provider_repo.provider_versions()),
-            ),
-            users=await user_repo.counters(),
-            subscribers=await SubscriptionRepo(session).subscribers(),
-            languages=await user_repo.languages(),
-            contracts=await ContractRepo(session).counters(),
-            snapshots=await ProviderHistoryRepo(session).count(),
-            db_size=db_size(),
-            uptime=time.monotonic() - STARTED,
-        )
-    await message.answer_rich(rich_message=render.stats(data))
