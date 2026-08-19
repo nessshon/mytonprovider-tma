@@ -1,5 +1,5 @@
 import { CopyButton } from "@/components/CopyButton";
-import { EmptyState } from "@/components/EmptyState";
+import { Callout } from "@/components/Callout";
 import { LoadMore } from "@/components/LoadMore";
 import { ProviderHeader } from "@/components/ProviderHeader";
 import { Screen } from "@/components/Screen";
@@ -103,9 +103,9 @@ export function ProviderBags() {
           </div>
         </>
       ) : failed ? (
-        <EmptyState glyph="close" title={t.bagsLoadError} iconColor="var(--ts-hint)" />
+        <Callout glyph="close" title={t.bagsLoadError} iconColor="var(--ts-hint)" />
       ) : total === 0 ? (
-        <EmptyState glyph="check" title={t.bagsFailedEmpty} iconColor={SC.green} />
+        <Callout glyph="check" title={t.bagsFailedEmpty} iconColor={SC.green} />
       ) : (
         <>
           <div className={styles.count}>

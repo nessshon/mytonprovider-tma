@@ -1,5 +1,5 @@
 import { Card } from "@/components/Card";
-import { EmptyState } from "@/components/EmptyState";
+import { Callout } from "@/components/Callout";
 import { Icon } from "@/components/Icon/Icon";
 import { Screen } from "@/components/Screen";
 import { ScreenHeader } from "@/components/ScreenHeader";
@@ -70,7 +70,7 @@ export function Trusted() {
       </div>
 
       {addresses.length === 0 ? (
-        <EmptyState glyph="check" title={t.trustedEmptyTitle} desc={t.trustedEmptyDesc} />
+        <Callout glyph="check" title={t.trustedEmptyTitle} desc={t.trustedEmptyDesc} />
       ) : (
         <>
           <div className={styles.count}>{t.trustedCount(addresses.length)}</div>

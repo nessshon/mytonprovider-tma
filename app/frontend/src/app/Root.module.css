@@ -1,6 +1,4 @@
 .logout {
-  display: block;
-  margin: 0 auto;
   padding: 12px 20px;
   border: none;
   border-radius: var(--ts-radius-field);

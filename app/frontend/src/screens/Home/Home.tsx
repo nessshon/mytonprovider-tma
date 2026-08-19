@@ -1,4 +1,4 @@
-import { EmptyState } from "@/components/EmptyState";
+import { Callout } from "@/components/Callout";
 import { FloatingTabs } from "@/components/FloatingTabs";
 import { Icon } from "@/components/Icon/Icon";
 import { MenuSheet } from "@/components/MenuSheet";
@@ -10,7 +10,6 @@ import { hydrateFromServer, setAlertsEnabled, toggleBell, toggleFavorite } from 
 import type { Provider } from "@/data/types";
 import { useT } from "@/i18n";
 import { cx } from "@/lib/cx";
-import { isInTelegram } from "@/lib/telegram";
 import { useAlerts } from "@/stores/alerts";
 import { useAuth } from "@/stores/auth";
 import { useCatalog } from "@/stores/catalog";
@@ -145,17 +144,13 @@ export function Home() {
     />
   );
 
-  const hero = (
-    <div className={styles.hero}>
-      <span className={styles.heroLogo}>
-        <TonLogo />
-      </span>
-      <div className={styles.heroTitle}>{t.mainTitle}</div>
-      <div className={styles.heroDesc}>{t.mainDesc}</div>
-    </div>
-  );
+  const listHero = <Callout hero icon={<TonLogo />} title={t.mainTitle} desc={t.mainDesc} />;
 
-  const listToolbar = (providers.length > 0 || loading) && (
+  const subsHero = <Callout hero glyph="bell" title={t.subsTitle} desc={t.subsDesc} />;
+
+  const favHero = <Callout hero glyph="star" title={t.favTitle} desc={t.favDesc} />;
+
+  const sortToolbar = (
     <div className={styles.toolbar}>
       <button type="button" className={styles.toolbarBtn} onClick={() => setSortField(sort.field)}>
         <span className={cx(styles.sortChevron, sort.dir === "asc" && styles.sortChevronUp)}>
@@ -170,6 +165,10 @@ export function Home() {
       </button>
     </div>
   );
+
+  const listToolbar = (providers.length > 0 || loading) && sortToolbar;
+
+  const favToolbar = (favorites.length > 0 || favLoading) && sortToolbar;
 
   const subsToolbar = (subItems.length > 0 || subsLoading) && (
     <div className={styles.toolbar}>
@@ -189,27 +188,19 @@ export function Home() {
   );
 
   const errorBlock = (
-    <div className={styles.errorBlock}>
-      <Icon glyph="close" size={42} color="var(--ts-hint)" />
-      <div>
-        <div className={styles.errorText}>{t.loadError}</div>
-        {errorStatus !== null && <div className={styles.errorCode}>HTTP {errorStatus}</div>}
-      </div>
+    <Callout desc={errorStatus !== null ? `${t.loadError} (HTTP ${errorStatus})` : t.loadError}>
       <button type="button" className={styles.retryBtn} onClick={onReload}>
         {t.retry}
       </button>
-    </div>
+    </Callout>
   );
 
   const loginBlock = (
-    <div className={styles.loginBlock}>
-      <Icon glyph="telegram" size={44} color="var(--ts-tg)" />
-      <div className={styles.loginTitle}>{t.loginTg}</div>
-      <div className={styles.loginDesc}>{t.loginHint}</div>
+    <Callout desc={t.loginNeeded}>
       <div className={styles.loginButtonWrap}>
         <TelegramLoginButton />
       </div>
-    </div>
+    </Callout>
   );
 
   const pane = (key: Tab) => {
@@ -217,6 +208,7 @@ export function Home() {
       const rows = subItems.slice(0, visible.subs);
       return (
         <ProviderPane
+          hero={subsHero}
           toolbar={subsToolbar}
           count={loggedIn && subItems.length > 0 ? t.showing(rows.length, subItems.length) : null}
           loading={subsLoading}
@@ -229,12 +221,7 @@ export function Home() {
             ) : isError ? (
               errorBlock
             ) : (
-              <EmptyState
-                glyph="bell"
-                iconColor="var(--ts-star)"
-                title={t.subsEmptyTitle}
-                desc={t.subsEmptyDesc}
-              />
+              <Callout desc={t.subsEmpty} />
             )
           }
           onOpen={openProvider}
@@ -247,8 +234,8 @@ export function Home() {
     const rows = items.slice(0, visible[key]);
     return (
       <ProviderPane
-        hero={key === "list" ? hero : undefined}
-        toolbar={key === "list" ? listToolbar : undefined}
+        hero={key === "fav" ? favHero : listHero}
+        toolbar={key === "fav" ? favToolbar : listToolbar}
         count={items.length > 0 ? t.showing(rows.length, items.length) : null}
         loading={key === "fav" ? favLoading : loading}
         skeletonCount={rows.length || (key === "fav" ? Math.min(favorites.length, PAGE_SIZE) : PAGE_SIZE)}
@@ -258,12 +245,7 @@ export function Home() {
           isError ? (
             errorBlock
           ) : (
-            <EmptyState
-              glyph={key === "fav" ? "star" : "search"}
-              iconColor="var(--ts-star)"
-              title={key === "fav" ? t.favEmptyTitle : t.providersNotFound}
-              desc={key === "fav" ? t.favEmptyDesc : undefined}
-            />
+            <Callout desc={key === "fav" && favorites.length === 0 ? t.favEmpty : t.providersNotFound} />
           )
         }
         onOpen={openProvider}
@@ -275,7 +257,6 @@ export function Home() {
   return (
     <div className={styles.screen}>
       <nav className={styles.nav}>
-        {!isInTelegram() && <div className={styles.headerTitle}>{t.appName}</div>}
         <div className={styles.search}>
           <Icon glyph="search" size={16} color="var(--ts-hint)" />
           <input

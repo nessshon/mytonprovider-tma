@@ -1,7 +1,7 @@
 import { Card } from "@/components/Card";
 import { CopyButton } from "@/components/CopyButton";
 import { CopyRow } from "@/components/CopyRow";
-import { EmptyState } from "@/components/EmptyState";
+import { Callout } from "@/components/Callout";
 import { ExplorerAddressRow } from "@/components/ExplorerAddressRow";
 import { FieldRow } from "@/components/FieldRow";
 import { Icon } from "@/components/Icon/Icon";
@@ -162,15 +162,15 @@ export function BagExplorer() {
         )}
       </div>
 
-      {status === "idle" && <EmptyState glyph="search" title={t.bagIdleTitle} desc={t.bagIdleDesc} />}
+      {status === "idle" && <Callout glyph="search" title={t.bagIdleTitle} desc={t.bagIdleDesc} />}
       {status === "loading" && <BagSkeleton t={t} />}
       {status === "invalid" && (
-        <EmptyState glyph="info" title={t.bagInvalidTitle} desc={t.bagInvalidDesc} iconColor="var(--ts-hint)" />
+        <Callout glyph="info" title={t.bagInvalidTitle} desc={t.bagInvalidDesc} iconColor="var(--ts-hint)" />
       )}
       {status === "notfound" && (
-        <EmptyState glyph="close" title={t.bagNotFoundTitle} desc={t.bagNotFoundDesc} iconColor="var(--ts-hint)" />
+        <Callout glyph="close" title={t.bagNotFoundTitle} desc={t.bagNotFoundDesc} iconColor="var(--ts-hint)" />
       )}
-      {status === "failed" && <EmptyState glyph="close" title={t.bagsLoadError} iconColor="var(--ts-hint)" />}
+      {status === "failed" && <Callout glyph="close" title={t.bagsLoadError} iconColor="var(--ts-hint)" />}
 
       {status === "ready" && result && (
         <>

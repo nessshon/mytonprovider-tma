@@ -1,7 +1,7 @@
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { HashRouter } from "react-router-dom";
 import { endSession } from "@/app/session";
-import { EmptyState } from "@/components/EmptyState";
+import { Callout } from "@/components/Callout";
 import { useT } from "@/i18n";
 import { useAuth } from "@/stores/auth";
 import { AppShell } from "./AppShell";
@@ -17,12 +17,11 @@ export function Root() {
       <ThemeGate>
         <AppShell>
           {banned ? (
-            <>
-              <EmptyState glyph="close" title={t.bannedTitle} desc={t.bannedDesc} iconColor="var(--ts-hint)" />
+            <Callout glyph="close" title={t.bannedTitle} desc={t.bannedDesc} iconColor="var(--ts-hint)">
               <button type="button" className={styles.logout} onClick={endSession}>
                 {t.logout}
               </button>
-            </>
+            </Callout>
           ) : (
             <HashRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
               <AppRoutes />
