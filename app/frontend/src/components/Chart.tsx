@@ -7,6 +7,7 @@ const WIDTH = 300;
 const HEIGHT = 64;
 const PAD = 4;
 const TWO_DAYS_SEC = 172800;
+const BRIDGE_SEC = 300;
 
 interface ChartProps {
   values: (number | null)[];
@@ -68,14 +69,15 @@ export function Chart({ values, peaks, times, threshold, unit, label, current, l
   const runs: number[][] = [];
   for (const index of filled) {
     const run = runs[runs.length - 1];
-    if (run && index - run[run.length - 1] === 1) run.push(index);
+    const previous = run?.[run.length - 1];
+    if (previous !== undefined && (index - previous === 1 || times[index] - times[previous] <= BRIDGE_SEC)) run.push(index);
     else runs.push([index]);
   }
   const lines = runs.filter((run) => run.length > 1);
   const dots = runs.filter((run) => run.length === 1).map((run) => run[0]);
   const bridges = filled.slice(1).flatMap((index, position) => {
     const previous = filled[position];
-    return index - previous > 1 ? [[previous, index]] : [];
+    return index - previous > 1 && times[index] - times[previous] > BRIDGE_SEC ? [[previous, index]] : [];
   });
 
   const areaPath = lines
@@ -126,6 +128,7 @@ export function Chart({ values, peaks, times, threshold, unit, label, current, l
       <div
         ref={wrapRef}
         className={styles.plot}
+        data-no-drag
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endScrub}

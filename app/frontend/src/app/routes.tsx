@@ -1,4 +1,4 @@
-import { bindSettingsButton, getStartParam, isInTelegram } from "@/lib/telegram";
+import { bindSettingsButton, getStartParam } from "@/lib/telegram";
 import { Alerts } from "@/screens/Alerts/Alerts";
 import { BagExplorer } from "@/screens/BagExplorer/BagExplorer";
 import { Filters } from "@/screens/Filters/Filters";
@@ -7,11 +7,11 @@ import { ProviderBags } from "@/screens/ProviderBags/ProviderBags";
 import { ProviderDetail } from "@/screens/ProviderDetail/ProviderDetail";
 import { Trusted } from "@/screens/Trusted/Trusted";
 import { useUi } from "@/stores/ui";
-import { useEffect, useLayoutEffect } from "react";
-import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { Navigate, Route, useNavigate, useParams } from "react-router-dom";
+import { LayerStack } from "./layers/LayerStack";
 
 let startParamHandled = false;
-let seeded = false;
 
 const PROVIDER_RE = /^(?:p_)?([0-9a-f]{64})$/i;
 const BAG_RE = /^b_(.+)$/i;
@@ -23,7 +23,6 @@ function ProviderDetailRoute() {
 
 export function AppRoutes() {
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(
     () =>
@@ -50,18 +49,8 @@ export function AppRoutes() {
     }
   }, [navigate]);
 
-  useLayoutEffect(() => {
-    if (seeded || isInTelegram()) return;
-    seeded = true;
-    if (location.key === "default" && location.pathname !== "/") {
-      const target = location.pathname + location.search;
-      navigate("/", { replace: true });
-      navigate(target);
-    }
-  }, [navigate, location]);
-
   return (
-    <Routes>
+    <LayerStack>
       <Route path="/" element={<Home />} />
       <Route path="/provider/:pubkey" element={<ProviderDetailRoute />} />
       <Route path="/provider/:pubkey/bags" element={<ProviderBags />} />
@@ -70,6 +59,6 @@ export function AppRoutes() {
       <Route path="/filters" element={<Filters />} />
       <Route path="/alerts" element={<Alerts />} />
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    </LayerStack>
   );
 }

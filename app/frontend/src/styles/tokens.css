@@ -17,6 +17,11 @@
   --ts-hairline: 0.5px;
 
   --ts-safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  --ts-sheet-ms: 420ms;
+  --ts-sheet-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --ts-tap-ms: 150ms;
+  --ts-tap-scale: 0.98;
 }
 
 [data-theme="dark"] {

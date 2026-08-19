@@ -18,7 +18,7 @@ export function ThresholdSlider({ value, onChange }: ThresholdSliderProps) {
   return (
     <div className={styles.row}>
       <div className={styles.area}>
-        <div className={styles.track} ref={trackRef}>
+        <div className={styles.track} ref={trackRef} data-no-drag>
           <div className={styles.fill} style={{ width: `${pct}%` }} />
           <div className={styles.thumb} style={{ left: `${pct}%` }} onPointerDown={onDown} />
         </div>

@@ -7,6 +7,8 @@
 .scroll {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   padding: 0 16px 48px;
   scrollbar-width: none;
 }

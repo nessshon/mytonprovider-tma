@@ -92,6 +92,7 @@ export function TabPager<T extends string>({
     <div
       ref={trackRef}
       className={styles.track}
+      data-no-drag
       onScroll={onScroll}
       onPointerDown={() => {
         dragging.current = true;

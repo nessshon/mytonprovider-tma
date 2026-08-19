@@ -73,9 +73,8 @@ export function getStartParam(): string | null {
 }
 
 interface ButtonState {
-  active: (() => void) | null;
+  handlers: (() => void)[];
   off: () => void;
-  bound: boolean;
 }
 
 const buttonStates = new WeakMap<TelegramButton, ButtonState>();
@@ -83,29 +82,31 @@ const buttonStates = new WeakMap<TelegramButton, ButtonState>();
 function bindButton(button: TelegramButton, handler: () => void): () => void {
   let state = buttonStates.get(button);
   if (!state) {
-    state = { active: null, off: () => {}, bound: false };
+    state = { handlers: [], off: () => {} };
     buttonStates.set(button, state);
   }
   const current = state;
-  current.active = handler;
-  if (!current.bound) {
+  const wasEmpty = current.handlers.length === 0;
+  current.handlers.push(handler);
+  if (wasEmpty) {
     try {
       if (button.show.isAvailable()) button.show();
-      current.off = button.onClick(() => current.active?.());
-      current.bound = true;
+      current.off = button.onClick(() => current.handlers[current.handlers.length - 1]?.());
     } catch {
+      current.handlers.pop();
       return () => {};
     }
   }
   return () => {
-    if (current.active !== handler) return;
+    const index = current.handlers.lastIndexOf(handler);
+    if (index < 0) return;
+    current.handlers.splice(index, 1);
+    if (current.handlers.length > 0) return;
     try {
       current.off();
       if (button.hide.isAvailable()) button.hide();
     } catch {}
-    current.active = null;
     current.off = () => {};
-    current.bound = false;
   };
 }
 

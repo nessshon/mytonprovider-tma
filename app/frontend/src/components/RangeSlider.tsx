@@ -27,7 +27,7 @@ export function RangeSlider({ value, min, max, step, onChange }: RangeSliderProp
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.track} ref={trackRef}>
+      <div className={styles.track} ref={trackRef} data-no-drag>
         <div className={styles.fill} style={{ left: `${loPct}%`, width: `${hiPct - loPct}%` }} />
         <div className={styles.thumb} style={{ left: `${loPct}%` }} onPointerDown={onLoDown} />
         <div className={styles.thumb} style={{ left: `${hiPct}%` }} onPointerDown={onHiDown} />

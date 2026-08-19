@@ -1,0 +1,120 @@
+@keyframes ts-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes ts-scrim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  z-index: calc(60 + var(--layer-depth));
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  animation: ts-scrim-in 0.2s ease;
+  transition: opacity var(--ts-sheet-ms) var(--ts-sheet-ease);
+  pointer-events: auto;
+}
+
+.scrimClosing {
+  opacity: 0;
+}
+
+.sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--ts-bg);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.28);
+  animation: ts-sheet-up var(--ts-sheet-ms) var(--ts-sheet-ease);
+  transition: transform var(--ts-sheet-ms) var(--ts-sheet-ease);
+  pointer-events: auto;
+  will-change: transform;
+}
+
+.full {
+  height: calc(100% - 10px * var(--layer-depth));
+}
+
+.auto {
+  max-height: calc(100% - 10px * var(--layer-depth));
+  padding-bottom: var(--ts-safe-bottom);
+  background: var(--ts-card);
+  border-radius: 20px 20px 0 0;
+}
+
+.dragging {
+  transition: none;
+}
+
+.behind {
+  transform: scale(0.96) translateY(-8px);
+}
+
+.closing {
+  transform: translateY(100%);
+}
+
+.grabber {
+  flex: none;
+  width: 38px;
+  height: 5px;
+  margin: 8px auto 4px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: var(--ts-seg);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.title {
+  margin-top: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: -0.2px;
+}
+
+.subtitle {
+  max-width: 300px;
+  margin: 7px auto 0;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--ts-hint);
+  text-align: center;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.auto > .body {
+  flex: none;
+  padding: 4px 16px 14px;
+  overscroll-behavior: contain;
+}
