@@ -59,15 +59,6 @@
   letter-spacing: -0.2px;
 }
 
-.headerActions {
-  position: absolute;
-  top: 0;
-  right: 4px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-}
-
 .headerBtn {
   display: inline-flex;
   align-items: center;
@@ -84,13 +75,6 @@
 .spin {
   display: inline-flex;
   animation: ts-spin 0.8s linear infinite;
-}
-
-.scroll {
-  composes: scroll from "../../components/Screen.module.css";
-  display: flex;
-  flex-direction: column;
-  padding-bottom: 22px;
 }
 
 .hero {

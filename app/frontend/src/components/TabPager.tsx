@@ -1,4 +1,4 @@
-import { type MutableRefObject, type ReactNode, type UIEvent, useEffect, useRef } from "react";
+import { type MutableRefObject, type ReactNode, type UIEvent, useEffect, useLayoutEffect, useRef } from "react";
 import styles from "./TabPager.module.css";
 
 const SETTLE_MS = 140;
@@ -43,7 +43,7 @@ export function TabPager<T extends string>({
     return () => track.removeEventListener("scrollend", handler);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const track = trackRef.current;
     if (!track) return;
     const index = tabs.indexOf(tab);

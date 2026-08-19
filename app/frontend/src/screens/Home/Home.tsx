@@ -26,9 +26,7 @@ import { TonLogo } from "./TonLogo";
 
 const RELOAD_SPIN_MS = 1100;
 const SCROLL_TOP_THRESHOLD = 360;
-const SKELETON_MIN = 3;
-const LIST_SKELETON_MIN = 6;
-const TABS = ["list", "subs", "fav"] as const;
+const TABS = ["subs", "list", "fav"] as const;
 
 export function Home() {
   const t = useT();
@@ -70,6 +68,10 @@ export function Home() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    setShowTop((panes.current[tab]?.scrollTop ?? 0) > SCROLL_TOP_THRESHOLD);
+  }, [tab]);
+
   const listItems = useMemo(
     () => selectCatalog(providers, { favTab: false, search, filters, sort, favorites, bounds }),
     [providers, search, filters, sort, favorites, bounds],
@@ -89,16 +91,21 @@ export function Home() {
   const activeFilters = countActiveFilters(filters);
   const initialLoading = status !== "ready" && status !== "error";
   const loading = spinning || initialLoading;
+  const subsLoading = loggedIn && loading && subscribed.length > 0;
+  const favLoading = loading && favorites.length > 0;
   const isError = status === "error" && providers.length === 0;
 
   const onReload = () => {
+    if (spinning) return;
     setSpinning(true);
-    void reload();
+    const startedAt = performance.now();
+    void reload().finally(() => {
+      const rest = Math.max(0, RELOAD_SPIN_MS - (performance.now() - startedAt));
+      reloadTimer.current = setTimeout(() => setSpinning(false), rest);
+    });
     if (useAuth.getState().token) {
       hydrateFromServer().catch((error: unknown) => console.error("reload sync failed", error));
     }
-    clearTimeout(reloadTimer.current);
-    reloadTimer.current = setTimeout(() => setSpinning(false), RELOAD_SPIN_MS);
   };
 
   const onPaneScroll = (paneTab: Tab, scrollTop: number) => {
@@ -148,7 +155,7 @@ export function Home() {
     </div>
   );
 
-  const listToolbar = providers.length > 0 && (
+  const listToolbar = (providers.length > 0 || loading) && (
     <div className={styles.toolbar}>
       <button type="button" className={styles.toolbarBtn} onClick={() => setSortField(sort.field)}>
         <span className={cx(styles.sortChevron, sort.dir === "asc" && styles.sortChevronUp)}>
@@ -164,7 +171,7 @@ export function Home() {
     </div>
   );
 
-  const subsToolbar = subItems.length > 0 && (
+  const subsToolbar = (subItems.length > 0 || subsLoading) && (
     <div className={styles.toolbar}>
       <button type="button" className={styles.toolbarBtn} onClick={() => setAlertsEnabled(!alertEnabled)}>
         {alertEnabled ? (
@@ -205,8 +212,6 @@ export function Home() {
     </div>
   );
 
-  const listSkeleton = Math.min(Math.max(visible.list, LIST_SKELETON_MIN), PAGE_SIZE);
-
   const pane = (key: Tab) => {
     if (key === "subs") {
       const rows = subItems.slice(0, visible.subs);
@@ -214,13 +219,15 @@ export function Home() {
         <ProviderPane
           toolbar={subsToolbar}
           count={loggedIn && subItems.length > 0 ? t.showing(rows.length, subItems.length) : null}
-          loading={loggedIn && loading}
-          skeletonCount={Math.max(subscribed.length, SKELETON_MIN)}
+          loading={subsLoading}
+          skeletonCount={rows.length || Math.min(subscribed.length, PAGE_SIZE)}
           rows={rows}
           trailing={bellToggle}
           fallback={
             !loggedIn ? (
               loginBlock
+            ) : isError ? (
+              errorBlock
             ) : (
               <EmptyState
                 glyph="bell"
@@ -243,8 +250,8 @@ export function Home() {
         hero={key === "list" ? hero : undefined}
         toolbar={key === "list" ? listToolbar : undefined}
         count={items.length > 0 ? t.showing(rows.length, items.length) : null}
-        loading={loading}
-        skeletonCount={key === "fav" ? Math.max(favorites.length, SKELETON_MIN) : listSkeleton}
+        loading={key === "fav" ? favLoading : loading}
+        skeletonCount={rows.length || (key === "fav" ? Math.min(favorites.length, PAGE_SIZE) : PAGE_SIZE)}
         rows={rows}
         trailing={starToggle}
         fallback={
@@ -319,8 +326,8 @@ export function Home() {
 
       <FloatingTabs
         tabs={[
-          { key: "list", label: t.list, glyph: "grid" },
           { key: "subs", label: t.subs, glyph: "bell" },
+          { key: "list", label: t.list, glyph: "grid" },
           { key: "fav", label: t.fav, glyph: "star" },
         ]}
         tab={tab}

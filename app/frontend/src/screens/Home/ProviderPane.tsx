@@ -35,7 +35,7 @@ export function ProviderPane({
     <>
       {hero}
       {toolbar}
-      {count !== null && <div className={styles.count}>{count || " "}</div>}
+      {(count !== null || loading) && <div className={styles.count}>{count || " "}</div>}
 
       {loading ? (
         <div className={styles.list}>
