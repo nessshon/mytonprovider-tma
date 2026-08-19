@@ -14,6 +14,7 @@
 
 .title {
   margin-top: 14px;
+  text-wrap: balance;
   font-size: 16px;
   font-weight: 600;
 }
@@ -21,6 +22,7 @@
 .desc {
   margin-top: 7px;
   max-width: 270px;
+  text-wrap: balance;
   font-size: 13.5px;
   line-height: 1.45;
   color: var(--ts-hint);
@@ -62,7 +64,7 @@
 
 .hero .desc {
   margin-top: 6px;
-  max-width: 300px;
+  max-width: 340px;
   font-size: 14.5px;
   line-height: 1.4;
 }

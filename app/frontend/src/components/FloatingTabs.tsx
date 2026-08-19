@@ -2,10 +2,12 @@ import { Icon } from "@/components/Icon/Icon";
 import type { GlyphName } from "@/components/Icon/glyphs";
 import { cx } from "@/lib/cx";
 import { tick } from "@/lib/telegram";
-import { type KeyboardEvent, useEffect } from "react";
+import { useSegmentDrag } from "@/hooks/useSegmentDrag";
+import { type KeyboardEvent, useEffect, useRef } from "react";
 import styles from "./FloatingTabs.module.css";
 
 const DOCK_SPACE = "74px";
+const BAR_PADDING = 4;
 
 interface FloatingTab<T extends string> {
   key: T;
@@ -18,9 +20,11 @@ interface FloatingTabsProps<T extends string> {
   tab: T;
   progress: number;
   onSelect: (tab: T) => void;
+  onScrub: (position: number | null) => void;
 }
 
-export function FloatingTabs<T extends string>({ tabs, tab, progress, onSelect }: FloatingTabsProps<T>) {
+export function FloatingTabs<T extends string>({ tabs, tab, progress, onSelect, onScrub }: FloatingTabsProps<T>) {
+  const barRef = useRef<HTMLDivElement>(null);
   const activeIndex = Math.max(
     0,
     tabs.findIndex((item) => item.key === tab),
@@ -40,6 +44,18 @@ export function FloatingTabs<T extends string>({ tabs, tab, progress, onSelect }
     onSelect(next);
   };
 
+  const { offset, handlers } = useSegmentDrag(
+    barRef,
+    tabs.length,
+    BAR_PADDING,
+    activeIndex,
+    (index) => {
+      const next = tabs[index];
+      if (next) select(next.key);
+    },
+    onScrub,
+  );
+
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
     if (!step) return;
@@ -50,12 +66,19 @@ export function FloatingTabs<T extends string>({ tabs, tab, progress, onSelect }
 
   return (
     <div className={styles.dock}>
-      <div className={styles.bar} role="tablist" aria-orientation="horizontal" onKeyDown={onKeyDown}>
+      <div
+        ref={barRef}
+        className={styles.bar}
+        role="tablist"
+        aria-orientation="horizontal"
+        onKeyDown={onKeyDown}
+        {...handlers}
+      >
         <span
-          className={styles.thumb}
+          className={cx(styles.thumb, offset !== null && styles.thumbHeld)}
           style={{
-            width: `calc((100% - 8px) / ${tabs.length})`,
-            transform: `translateX(${thumb * 100}%)`,
+            width: `calc((100% - ${BAR_PADDING * 2}px) / ${tabs.length})`,
+            transform: offset === null ? `translateX(${thumb * 100}%)` : `translateX(${offset}px)`,
           }}
         />
         {tabs.map((item) => {

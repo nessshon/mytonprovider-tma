@@ -58,6 +58,7 @@ export function Home() {
   useEffect(() => () => clearTimeout(reloadTimer.current), []);
   const [progress, setProgress] = useState(TABS.indexOf(tab));
   const [showTop, setShowTop] = useState(false);
+  const [scrub, setScrub] = useState<number | null>(null);
   const [spinning, setSpinning] = useState(false);
 
   useEffect(() => {
@@ -185,6 +186,18 @@ export function Home() {
     </div>
   );
 
+  const query = search.trim();
+
+  const searchBlock = (
+    <Callout desc={t.searchEmpty}>
+      {listItems.length > 0 && (
+        <button type="button" className={styles.retryBtn} onClick={() => setTab("list")}>
+          {t.searchInCatalog(listItems.length)}
+        </button>
+      )}
+    </Callout>
+  );
+
   const errorBlock = (
     <Callout desc={errorStatus !== null ? `${t.loadError} (HTTP ${errorStatus})` : t.loadError}>
       <button type="button" className={styles.retryBtn} onClick={onReload}>
@@ -218,6 +231,8 @@ export function Home() {
               loginBlock
             ) : isError ? (
               errorBlock
+            ) : query ? (
+              searchBlock
             ) : (
               <Callout desc={t.subsEmpty} />
             )
@@ -242,8 +257,10 @@ export function Home() {
         fallback={
           isError ? (
             errorBlock
+          ) : key === "fav" && query ? (
+            searchBlock
           ) : (
-            <Callout desc={key === "fav" && favorites.length === 0 ? t.favEmpty : t.providersNotFound} />
+            <Callout desc={key === "fav" ? t.favEmpty : t.providersNotFound} />
           )
         }
         onOpen={openProvider}
@@ -261,7 +278,7 @@ export function Home() {
             className={styles.searchInput}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder={t.searchPlaceholder}
+            placeholder={tab === "subs" ? t.searchSubs : tab === "fav" ? t.searchFav : t.searchPlaceholder}
           />
           {search && (
             <button type="button" aria-label="Clear" className={styles.searchClear} onClick={() => setSearch("")}>
@@ -284,6 +301,7 @@ export function Home() {
       <TabPager
         tabs={TABS}
         tab={tab}
+        scrub={scrub}
         panes={panes}
         onTabChange={setTab}
         onProgress={setProgress}
@@ -312,6 +330,7 @@ export function Home() {
         tab={tab}
         progress={progress}
         onSelect={setTab}
+        onScrub={setScrub}
       />
 
     </div>

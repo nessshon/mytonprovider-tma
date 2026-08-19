@@ -10,6 +10,7 @@ function reducedMotion(): boolean {
 interface TabPagerProps<T extends string> {
   tabs: readonly T[];
   tab: T;
+  scrub?: number | null;
   panes: MutableRefObject<Record<string, HTMLDivElement | null>>;
   onTabChange: (tab: T) => void;
   onProgress?: (progress: number) => void;
@@ -20,6 +21,7 @@ interface TabPagerProps<T extends string> {
 export function TabPager<T extends string>({
   tabs,
   tab,
+  scrub,
   panes,
   onTabChange,
   onProgress,
@@ -49,12 +51,24 @@ export function TabPager<T extends string>({
     const index = tabs.indexOf(tab);
     if (index < 0) return;
     indexRef.current = index;
+    if (scrub !== null && scrub !== undefined) return;
     const instant = !ready.current || dragging.current || reducedMotion();
     ready.current = true;
     const target = index * track.clientWidth;
     if (Math.abs(track.scrollLeft - target) < 1) return;
     track.scrollTo({ left: target, behavior: instant ? "auto" : "smooth" });
-  }, [tab, tabs]);
+  }, [tab, tabs, scrub]);
+
+  useLayoutEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    if (scrub === null || scrub === undefined) {
+      track.style.scrollSnapType = "";
+      return;
+    }
+    track.style.scrollSnapType = "none";
+    track.scrollLeft = scrub * track.clientWidth;
+  }, [scrub]);
 
   useEffect(() => {
     const track = trackRef.current;

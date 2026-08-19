@@ -23,6 +23,7 @@
   border: var(--ts-hairline) solid var(--ts-sep);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
   pointer-events: auto;
+  touch-action: pan-y;
 }
 
 .thumb {
@@ -33,6 +34,10 @@
   border-radius: 18px;
   background: var(--ts-seg);
   will-change: transform;
+}
+
+.thumbHeld {
+  transition: none;
 }
 
 .tab {

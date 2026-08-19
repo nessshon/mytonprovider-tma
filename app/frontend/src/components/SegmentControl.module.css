@@ -4,6 +4,7 @@
   padding: 2px;
   border-radius: var(--ts-radius-seg);
   background: var(--ts-seg);
+  touch-action: pan-y;
 }
 
 .thumb {
@@ -16,6 +17,10 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
   transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
+}
+
+.thumbHeld {
+  transition: none;
 }
 
 .option {

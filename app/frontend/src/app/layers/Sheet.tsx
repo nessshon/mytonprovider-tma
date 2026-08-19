@@ -28,6 +28,7 @@ interface SheetProps {
 export function Sheet({ height, depth, top, closing, title, subtitle, onDismiss, onClosed, children }: SheetProps) {
   const layerRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement | null>(null);
+  const scrimRef = useRef<HTMLDivElement>(null);
   const { ref: dragRef, offset, dragging, handlers } = useSheetDrag(top && !closing, onDismiss);
 
   useEffect(() => {
@@ -47,6 +48,14 @@ export function Sheet({ height, depth, top, closing, title, subtitle, onDismiss,
       easing: CLOSE_EASE,
       fill: "forwards",
     });
+    const scrim = scrimRef.current;
+    if (scrim) {
+      scrim.animate([{ opacity: getComputedStyle(scrim).opacity }, { opacity: 0 }], {
+        duration: CLOSE_MS,
+        easing: CLOSE_EASE,
+        fill: "forwards",
+      });
+    }
     const finish = () => closed.current();
     slide.addEventListener("finish", finish);
     const timer = setTimeout(finish, CLOSE_MS * 2);
@@ -65,10 +74,7 @@ export function Sheet({ height, depth, top, closing, title, subtitle, onDismiss,
       aria-modal={top}
       aria-label={title}
     >
-      <div
-        className={cx(styles.scrim, closing && styles.scrimClosing)}
-        onClick={top && !closing ? onDismiss : undefined}
-      />
+      <div ref={scrimRef} className={styles.scrim} onClick={top && !closing ? onDismiss : undefined} />
       <div
         ref={(element) => {
           sheetRef.current = element;
