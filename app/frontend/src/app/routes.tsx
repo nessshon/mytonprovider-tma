@@ -1,3 +1,4 @@
+import { MenuSheet } from "@/components/MenuSheet";
 import { bindSettingsButton, getStartParam } from "@/lib/telegram";
 import { Alerts } from "@/screens/Alerts/Alerts";
 import { BagExplorer } from "@/screens/BagExplorer/BagExplorer";
@@ -6,9 +7,9 @@ import { Home } from "@/screens/Home/Home";
 import { ProviderBags } from "@/screens/ProviderBags/ProviderBags";
 import { ProviderDetail } from "@/screens/ProviderDetail/ProviderDetail";
 import { Trusted } from "@/screens/Trusted/Trusted";
-import { useUi } from "@/stores/ui";
 import { useEffect } from "react";
-import { Navigate, Route, useNavigate, useParams } from "react-router-dom";
+import { Navigate, Route, useLocation, useNavigate, useParams } from "react-router-dom";
+import { hasDialogs } from "./layers/context";
 import { LayerStack } from "./layers/LayerStack";
 
 let startParamHandled = false;
@@ -23,14 +24,15 @@ function ProviderDetailRoute() {
 
 export function AppRoutes() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   useEffect(
     () =>
       bindSettingsButton(() => {
-        navigate("/");
-        useUi.getState().setMenuOpen(true);
+        if (hasDialogs() || pathname === "/menu") return;
+        navigate("/menu");
       }),
-    [navigate],
+    [navigate, pathname],
   );
 
   useEffect(() => {
@@ -56,6 +58,7 @@ export function AppRoutes() {
       <Route path="/provider/:pubkey/bags" element={<ProviderBags />} />
       <Route path="/bags" element={<BagExplorer />} />
       <Route path="/trusted" element={<Trusted />} />
+      <Route path="/menu" element={<MenuSheet />} />
       <Route path="/filters" element={<Filters />} />
       <Route path="/alerts" element={<Alerts />} />
       <Route path="*" element={<Navigate to="/" replace />} />

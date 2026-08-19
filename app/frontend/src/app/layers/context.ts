@@ -15,6 +15,16 @@ export interface LayerHost {
 
 export const LayerContext = createContext<LayerHost | null>(null);
 
+let dialogsOpen = false;
+
+export function setDialogsOpen(open: boolean): void {
+  dialogsOpen = open;
+}
+
+export function hasDialogs(): boolean {
+  return dialogsOpen;
+}
+
 export function useLayerHost(): LayerHost | null {
   return useContext(LayerContext);
 }

@@ -46,6 +46,9 @@ export function initTelegram(): void {
   } catch (error) {
     console.error("Telegram SDK initialization failed", error);
   }
+  try {
+    if (backButton.hide.isAvailable()) backButton.hide();
+  } catch {}
 }
 
 export function getTelegramUser(): TelegramUser | null {

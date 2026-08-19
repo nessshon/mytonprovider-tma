@@ -4,6 +4,9 @@ import styles from "./Sheet.module.css";
 import type { SheetHeight } from "./presentation";
 import { useSheetDrag } from "./useSheetDrag";
 
+const CLOSE_MS = 260;
+const CLOSE_EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
+
 const SheetContext = createContext(false);
 
 export function useInSheet(): boolean {
@@ -24,12 +27,34 @@ interface SheetProps {
 
 export function Sheet({ height, depth, top, closing, title, subtitle, onDismiss, onClosed, children }: SheetProps) {
   const layerRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement | null>(null);
   const { ref: dragRef, offset, dragging, handlers } = useSheetDrag(top && !closing, onDismiss);
 
   useEffect(() => {
     const layer = layerRef.current;
     if (layer) layer.inert = !top;
   }, [top]);
+
+  const closed = useRef(onClosed);
+  closed.current = onClosed;
+
+  useEffect(() => {
+    const sheet = sheetRef.current;
+    if (!closing || !sheet) return;
+    const from = getComputedStyle(sheet).transform;
+    const slide = sheet.animate([{ transform: from === "none" ? "translateY(0px)" : from }, { transform: "translateY(100%)" }], {
+      duration: CLOSE_MS,
+      easing: CLOSE_EASE,
+      fill: "forwards",
+    });
+    const finish = () => closed.current();
+    slide.addEventListener("finish", finish);
+    const timer = setTimeout(finish, CLOSE_MS * 2);
+    return () => {
+      slide.removeEventListener("finish", finish);
+      clearTimeout(timer);
+    };
+  }, [closing]);
 
   return (
     <div
@@ -45,17 +70,17 @@ export function Sheet({ height, depth, top, closing, title, subtitle, onDismiss,
         onClick={top && !closing ? onDismiss : undefined}
       />
       <div
-        ref={dragRef}
+        ref={(element) => {
+          sheetRef.current = element;
+          dragRef(element);
+        }}
         className={cx(
           styles.sheet,
           styles[height],
           dragging && styles.dragging,
           closing ? styles.closing : !top && styles.behind,
         )}
-        style={!closing && offset > 0 ? { transform: `translateY(${offset}px)` } : undefined}
-        onTransitionEnd={(event) => {
-          if (closing && event.propertyName === "transform" && event.target === event.currentTarget) onClosed();
-        }}
+        style={offset > 0 ? { transform: `translateY(${offset}px)` } : undefined}
         {...handlers}
       >
         <button type="button" className={styles.grabber} aria-label="Close" onClick={onDismiss} />

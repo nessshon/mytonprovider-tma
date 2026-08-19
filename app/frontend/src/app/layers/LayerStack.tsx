@@ -1,7 +1,7 @@
 import { bindBackButton } from "@/lib/telegram";
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { type Location, Routes, useLocation, useNavigate } from "react-router-dom";
-import { type DialogSlot, LayerContext } from "./context";
+import { type DialogSlot, LayerContext, setDialogsOpen } from "./context";
 import styles from "./LayerStack.module.css";
 import { isBaseRoute, sheetHeight } from "./presentation";
 import { Sheet } from "./Sheet";
@@ -79,6 +79,8 @@ export function LayerStack({ children }: { children: ReactNode }) {
 
   const layered = liveLayers.length > 0 || dialogs.length > 0;
 
+  useEffect(() => setDialogsOpen(dialogs.length > 0), [dialogs.length]);
+
   useEffect(() => {
     const root = document.documentElement;
     if (layered) root.dataset.layered = "";
@@ -104,7 +106,7 @@ export function LayerStack({ children }: { children: ReactNode }) {
 
   return (
     <LayerContext.Provider value={host}>
-      <div className={styles.base} data-layered={liveLayers.length > 0 ? "" : undefined}>
+      <div className={styles.base} data-layered={layered ? "" : undefined}>
         <Routes location={entries[0].location}>{children}</Routes>
       </div>
       {layers.map((entry, index) => (

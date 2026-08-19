@@ -10,7 +10,7 @@
   align-items: center;
   gap: 12px;
   padding: 11px 14px;
-  background: var(--ts-card2);
+  background: var(--ts-card);
   border-radius: var(--ts-radius-group);
 }
 
@@ -62,7 +62,7 @@
 .group {
   margin: 22px 0 8px;
   border-radius: var(--ts-radius-group);
-  background: var(--ts-card2);
+  background: var(--ts-card);
   overflow: hidden;
 }
 

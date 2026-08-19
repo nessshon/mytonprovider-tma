@@ -1,7 +1,6 @@
 import { Callout } from "@/components/Callout";
 import { FloatingTabs } from "@/components/FloatingTabs";
 import { Icon } from "@/components/Icon/Icon";
-import { MenuSheet } from "@/components/MenuSheet";
 import { RoundToggle } from "@/components/RoundToggle";
 import { TabPager } from "@/components/TabPager";
 import { TelegramLoginButton } from "@/components/TelegramLoginButton";
@@ -10,14 +9,14 @@ import { hydrateFromServer, setAlertsEnabled, toggleBell, toggleFavorite } from 
 import type { Provider } from "@/data/types";
 import { useT } from "@/i18n";
 import { cx } from "@/lib/cx";
+import { isHydrated, onHydrated } from "@/lib/storage";
 import { useAlerts } from "@/stores/alerts";
 import { useAuth } from "@/stores/auth";
 import { useCatalog } from "@/stores/catalog";
 import { PAGE_SIZE, type Tab, useCatalogQuery } from "@/stores/catalogQuery";
 import { useFavorites } from "@/stores/favorites";
 import { useSubscriptions } from "@/stores/subscriptions";
-import { useUi } from "@/stores/ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./Home.module.css";
 import { ProviderPane } from "./ProviderPane";
@@ -53,8 +52,6 @@ export function Home() {
   const subscribed = useSubscriptions((s) => s.subscribed);
   const alertsOff = useSubscriptions((s) => s.alertsOff);
   const alertEnabled = useAlerts((s) => s.enabled);
-  const menuOpen = useUi((s) => s.menuOpen);
-  const setMenuOpen = useUi((s) => s.setMenuOpen);
 
   const panes = useRef<Record<string, HTMLDivElement | null>>({});
   const reloadTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -87,11 +84,12 @@ export function Home() {
     );
   }, [loggedIn, providers, subscribed, search]);
 
+  const hydrated = useSyncExternalStore(onHydrated, isHydrated);
   const activeFilters = countActiveFilters(filters);
   const initialLoading = status !== "ready" && status !== "error";
   const loading = spinning || initialLoading;
-  const subsLoading = loggedIn && loading && subscribed.length > 0;
-  const favLoading = loading && favorites.length > 0;
+  const subsLoading = loggedIn && loading && (!hydrated || subscribed.length > 0);
+  const favLoading = loading && (!hydrated || favorites.length > 0);
   const isError = status === "error" && providers.length === 0;
 
   const onReload = () => {
@@ -277,7 +275,7 @@ export function Home() {
               <Icon glyph="reload" size={20} color="var(--ts-hint)" />
             </span>
           </button>
-          <button type="button" aria-label={t.settings} className={styles.headerBtn} onClick={() => setMenuOpen(true)}>
+          <button type="button" aria-label={t.settings} className={styles.headerBtn} onClick={() => navigate("/menu")}>
             <Icon glyph="menu" size={22} color="var(--ts-hint)" />
           </button>
         </div>
@@ -316,7 +314,6 @@ export function Home() {
         onSelect={setTab}
       />
 
-      {menuOpen && <MenuSheet onClose={() => setMenuOpen(false)} />}
     </div>
   );
 }

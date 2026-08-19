@@ -73,6 +73,21 @@ interface PersistedStore {
   };
 }
 
+const hydrationListeners = new Set<() => void>();
+
+let hydrated = false;
+
+export function isHydrated(): boolean {
+  return hydrated;
+}
+
+export function onHydrated(listener: () => void): () => void {
+  hydrationListeners.add(listener);
+  return () => {
+    hydrationListeners.delete(listener);
+  };
+}
+
 export async function hydrateStores(stores: PersistedStore[]): Promise<void> {
   const unsubscribers = stores.map((store) => {
     const name = store.persist.getOptions().name ?? "";
@@ -80,4 +95,6 @@ export async function hydrateStores(stores: PersistedStore[]): Promise<void> {
   });
   await Promise.all(stores.map((store) => Promise.resolve(store.persist.rehydrate()).catch(() => {})));
   unsubscribers.forEach((unsubscribe) => unsubscribe());
+  hydrated = true;
+  hydrationListeners.forEach((listener) => listener());
 }

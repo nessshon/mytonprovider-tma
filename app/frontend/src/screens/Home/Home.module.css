@@ -34,8 +34,8 @@
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 8px 10px;
-  padding: 10px 12px 12px;
+  gap: 8px;
+  padding: 8px 10px 10px;
   background: var(--ts-navbg);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
@@ -52,8 +52,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   background: none;
   border: none;
   border-radius: 9px;
@@ -70,7 +70,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 11px 12px;
+  padding: 8px 12px;
   background: var(--ts-seg);
   border-radius: var(--ts-radius-field);
   box-shadow: inset 0 0 0 1px transparent;

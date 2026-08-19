@@ -30,12 +30,13 @@
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
-  animation: ts-scrim-in 0.2s ease;
-  transition: opacity var(--ts-sheet-ms) var(--ts-sheet-ease);
+  animation: ts-scrim-in var(--ts-sheet-ms) ease;
+  transition: opacity var(--ts-sheet-out-ms) var(--ts-sheet-ease);
   pointer-events: auto;
 }
 
 .scrimClosing {
+  animation: none;
   opacity: 0;
 }
 
@@ -45,10 +46,10 @@
   flex-direction: column;
   overflow: hidden;
   background: var(--ts-bg);
-  border-radius: 16px 16px 0 0;
+  border-radius: 18px 18px 0 0;
   box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.28);
   animation: ts-sheet-up var(--ts-sheet-ms) var(--ts-sheet-ease);
-  transition: transform var(--ts-sheet-ms) var(--ts-sheet-ease);
+  transition: transform var(--ts-sheet-out-ms) var(--ts-sheet-ease);
   pointer-events: auto;
   will-change: transform;
 }
@@ -60,20 +61,20 @@
 .auto {
   max-height: calc(100% - 10px * var(--layer-depth));
   padding-bottom: var(--ts-safe-bottom);
-  background: var(--ts-card);
-  border-radius: 20px 20px 0 0;
 }
 
 .dragging {
+  animation: none;
   transition: none;
 }
 
 .behind {
   transform: scale(0.96) translateY(-8px);
+  transition-duration: var(--ts-sheet-ms);
 }
 
 .closing {
-  transform: translateY(100%);
+  animation: none;
 }
 
 .grabber {
@@ -116,5 +117,6 @@
 .auto > .body {
   flex: none;
   padding: 4px 16px 14px;
+  overflow-y: auto;
   overscroll-behavior: contain;
 }

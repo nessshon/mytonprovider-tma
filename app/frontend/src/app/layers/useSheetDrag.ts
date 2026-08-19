@@ -1,7 +1,6 @@
 import { type PointerEvent as ReactPointerEvent, type RefCallback, useCallback, useEffect, useRef, useState } from "react";
 
 const SLOP = 6;
-const SCROLL_COOLDOWN_MS = 100;
 const CLOSE_RATIO = 0.25;
 const CLOSE_VELOCITY = 0.4;
 
@@ -54,7 +53,6 @@ export function useSheetDrag(enabled: boolean, onDismiss: () => void): SheetDrag
   const [dragging, setDragging] = useState(false);
   const sheet = useRef<HTMLDivElement | null>(null);
   const state = useRef<DragState>(IDLE);
-  const scrolledAt = useRef(0);
   const frame = useRef(0);
   const live = useRef({ enabled, onDismiss });
   live.current = { enabled, onDismiss };
@@ -86,8 +84,7 @@ export function useSheetDrag(enabled: boolean, onDismiss: () => void): SheetDrag
       if (Math.abs(dy) < SLOP && Math.abs(dx) < SLOP) return false;
       drag.decided = true;
       const atTop = !drag.scroller || drag.scroller.scrollTop <= 0;
-      const settled = performance.now() - scrolledAt.current > SCROLL_COOLDOWN_MS;
-      drag.active = dy > Math.abs(dx) && atTop && settled;
+      drag.active = dy > Math.abs(dx) && atTop;
       if (!drag.active) return false;
       setDragging(true);
     }
@@ -103,15 +100,14 @@ export function useSheetDrag(enabled: boolean, onDismiss: () => void): SheetDrag
     if (!drag.active) return;
     cancelAnimationFrame(frame.current);
     setDragging(false);
-    setOffset(0);
     const distance = y - drag.startY;
     const elapsed = performance.now() - drag.startTime;
     const velocity = elapsed > 0 ? distance / elapsed : 0;
-    if (distance > drag.height * CLOSE_RATIO || velocity > CLOSE_VELOCITY) live.current.onDismiss();
-  }, []);
-
-  const onScroll = useCallback(() => {
-    scrolledAt.current = performance.now();
+    if (distance <= drag.height * CLOSE_RATIO && velocity <= CLOSE_VELOCITY) {
+      setOffset(0);
+      return;
+    }
+    live.current.onDismiss();
   }, []);
 
   const onTouchStart = useCallback(
@@ -144,7 +140,6 @@ export function useSheetDrag(enabled: boolean, onDismiss: () => void): SheetDrag
     (element) => {
       const previous = sheet.current;
       if (previous) {
-        previous.removeEventListener("scroll", onScroll, true);
         previous.removeEventListener("touchstart", onTouchStart);
         previous.removeEventListener("touchmove", onTouchMove);
         previous.removeEventListener("touchend", onTouchEnd);
@@ -152,13 +147,12 @@ export function useSheetDrag(enabled: boolean, onDismiss: () => void): SheetDrag
       }
       sheet.current = element;
       if (!element) return;
-      element.addEventListener("scroll", onScroll, true);
       element.addEventListener("touchstart", onTouchStart, { passive: true });
       element.addEventListener("touchmove", onTouchMove, { passive: false });
       element.addEventListener("touchend", onTouchEnd);
       element.addEventListener("touchcancel", onTouchEnd);
     },
-    [onScroll, onTouchStart, onTouchMove, onTouchEnd],
+    [onTouchStart, onTouchMove, onTouchEnd],
   );
 
   useEffect(() => () => cancelAnimationFrame(frame.current), []);
