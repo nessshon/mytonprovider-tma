@@ -1,4 +1,12 @@
-import { type PointerEvent as ReactPointerEvent, type RefCallback, useCallback, useEffect, useRef, useState } from "react";
+import {
+  type MutableRefObject,
+  type PointerEvent as ReactPointerEvent,
+  type RefCallback,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 const SLOP = 6;
 const CLOSE_RATIO = 0.25;
@@ -6,6 +14,7 @@ const CLOSE_VELOCITY = 0.4;
 
 interface SheetDrag {
   ref: RefCallback<HTMLDivElement>;
+  element: MutableRefObject<HTMLDivElement | null>;
   offset: number;
   dragging: boolean;
   handlers: {
@@ -159,6 +168,7 @@ export function useSheetDrag(enabled: boolean, onDismiss: () => void): SheetDrag
 
   return {
     ref,
+    element: sheet,
     offset,
     dragging,
     handlers: {

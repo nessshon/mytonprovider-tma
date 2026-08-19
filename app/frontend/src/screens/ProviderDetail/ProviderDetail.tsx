@@ -7,7 +7,6 @@ import { FieldRow } from "@/components/FieldRow";
 import { Icon } from "@/components/Icon/Icon";
 import { MainButton } from "@/components/MainButton";
 import { MetricTile } from "@/components/MetricTile";
-import tileStyles from "@/components/MetricTile.module.css";
 import { PasswordSheet } from "@/components/PasswordSheet";
 import { ProviderHeader } from "@/components/ProviderHeader";
 import { Screen } from "@/components/Screen";
@@ -140,9 +139,7 @@ export function ProviderDetail() {
     <>
       <div className={styles.overviewCard}>
         <CopyRow label={t.publicKey} copyValue={provider.pubkey}>
-          <button type="button" className={cx(styles.mono, styles.monoText)} onClick={() => void navigator.clipboard?.writeText(provider.pubkey)}>
-            {shorten(provider.pubkey, 12)}
-          </button>
+          <span className={cx(styles.mono, styles.monoText)}>{shorten(provider.pubkey, 12)}</span>
         </CopyRow>
         <ExplorerAddressRow label={t.address} address={toUserFriendly(provider.address)} divider />
         {providerFields(provider, t).map((field, index) => (
@@ -247,7 +244,7 @@ export function ProviderDetail() {
             label={
               rank ? (
                 <>
-                  {t.rating} <b className={tileStyles.mark} style={{ color: rankColor(rank) }}>{`#${rank}`}</b>
+                  {t.rating} <b className={styles.mark} style={{ color: rankColor(rank) }}>{`#${rank}`}</b>
                 </>
               ) : (
                 t.rating

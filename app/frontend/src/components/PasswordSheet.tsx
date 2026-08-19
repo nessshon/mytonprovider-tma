@@ -1,4 +1,5 @@
 import { BottomSheet } from "@/components/BottomSheet";
+import { Field } from "@/components/Field";
 import { Icon } from "@/components/Icon/Icon";
 import { MainButton } from "@/components/MainButton";
 import { BackendError } from "@/data/backend";
@@ -114,28 +115,28 @@ export function PasswordSheet({ pubkey, onClose }: PasswordSheetProps) {
     <BottomSheet title={t.pwTitle} subtitle={t.pwSubtitle} onClose={onClose}>
       {(close) => (
         <>
-          <div className={cx(styles.field, shaking && styles.fieldShake)}>
-            <Icon glyph="lock" size={16} color="var(--ts-hint)" />
-            <input
-              type={show ? "text" : "password"}
-              value={value}
-              onChange={(event) => {
-                setValue(event.target.value);
-                setStatus("idle");
-                setError("none");
-              }}
-              placeholder={t.pwPlaceholder}
-              className={styles.input}
-            />
-            <button
-              type="button"
-              aria-label="Toggle visibility"
-              className={styles.eye}
-              onClick={() => setShow((prev) => !prev)}
-            >
-              <Icon glyph="eye" size={18} color="var(--ts-hint)" />
-            </button>
-          </div>
+          <Field
+            className={cx(styles.field, shaking && styles.fieldShake)}
+            glyph="lock"
+            password={!show}
+            value={value}
+            onChange={(next) => {
+              setValue(next);
+              setStatus("idle");
+              setError("none");
+            }}
+            placeholder={t.pwPlaceholder}
+            trailing={
+              <button
+                type="button"
+                aria-label="Toggle visibility"
+                className={styles.eye}
+                onClick={() => setShow((prev) => !prev)}
+              >
+                <Icon glyph="eye" size={18} color="var(--ts-hint)" />
+              </button>
+            }
+          />
           <div className={styles.error}>{errorText}</div>
           <div className={styles.submit}>
             <MainButton label={label} state={mainState} disabled={locked} onClick={() => submit(close)} />

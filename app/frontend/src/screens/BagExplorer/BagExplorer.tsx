@@ -2,6 +2,7 @@ import { Card } from "@/components/Card";
 import { CopyButton } from "@/components/CopyButton";
 import { CopyRow } from "@/components/CopyRow";
 import { Callout } from "@/components/Callout";
+import { Field } from "@/components/Field";
 import { ExplorerAddressRow } from "@/components/ExplorerAddressRow";
 import { FieldRow } from "@/components/FieldRow";
 import { Icon } from "@/components/Icon/Icon";
@@ -15,7 +16,6 @@ import { useT } from "@/i18n";
 import type { Dict } from "@/i18n/types";
 import { ADDRESS_RE, RAW_RE, toUserFriendly } from "@/lib/address";
 import { SC, tint } from "@/lib/colors";
-import { cx } from "@/lib/cx";
 import { EMPTY, ago, formatPriceGram, formatSpace, formatTime, shorten } from "@/lib/format";
 import { bagGatewayUrl } from "@/lib/gateway";
 import { reasonText, reasonTone } from "@/lib/status";
@@ -128,39 +128,35 @@ export function BagExplorer() {
 
   return (
     <Screen header={header}>
-      <div className={cx(styles.search, status === "invalid" && styles.searchError)}>
-        <Icon glyph="search" size={16} color="var(--ts-hint)" />
-        <input
-          className={styles.searchInput}
-          value={query}
-          placeholder={t.bagSearchPlaceholder}
-          enterKeyHint="search"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            if (status === "invalid") setStatus("idle");
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") runSearch(query);
-          }}
-        />
-        {query && (
-          <button
-            type="button"
-            aria-label="Clear"
-            className={styles.searchClear}
-            onClick={() => {
-              setQuery("");
-              setStatus("idle");
-              setResult(null);
-            }}
-          >
-            <Icon glyph="close" size={16} color="var(--ts-hint)" stroke={2} />
-          </button>
-        )}
-      </div>
+      <Field
+        glyph="search"
+        className={styles.search}
+        value={query}
+        onChange={(next) => {
+          setQuery(next);
+          if (status === "invalid") setStatus("idle");
+        }}
+        placeholder={t.bagSearchPlaceholder}
+        enterKeyHint="search"
+        invalid={status === "invalid"}
+        onEnter={() => runSearch(query)}
+        trailing={
+          query && (
+            <button
+              type="button"
+              aria-label="Clear"
+              className={styles.searchClear}
+              onClick={() => {
+                setQuery("");
+                setStatus("idle");
+                setResult(null);
+              }}
+            >
+              <Icon glyph="close" size={16} color="var(--ts-hint)" stroke={2} />
+            </button>
+          )
+        }
+      />
 
       {status === "idle" && <Callout glyph="search" title={t.bagIdleTitle} desc={t.bagIdleDesc} />}
       {status === "loading" && <BagSkeleton t={t} />}

@@ -1,16 +1,13 @@
+import { reducedMotion } from "@/lib/motion";
 import { type MutableRefObject, type ReactNode, type UIEvent, useEffect, useLayoutEffect, useRef } from "react";
 import styles from "./TabPager.module.css";
 
 const SETTLE_MS = 140;
 
-function reducedMotion(): boolean {
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
 interface TabPagerProps<T extends string> {
   tabs: readonly T[];
   tab: T;
-  scrub?: number | null;
+  scrubRef?: MutableRefObject<(position: number | null) => void>;
   panes: MutableRefObject<Record<string, HTMLDivElement | null>>;
   onTabChange: (tab: T) => void;
   onProgress?: (progress: number) => void;
@@ -21,7 +18,7 @@ interface TabPagerProps<T extends string> {
 export function TabPager<T extends string>({
   tabs,
   tab,
-  scrub,
+  scrubRef,
   panes,
   onTabChange,
   onProgress,
@@ -34,6 +31,7 @@ export function TabPager<T extends string>({
   const dragging = useRef(false);
   const ready = useRef(false);
   const indexRef = useRef(0);
+  const scrubbing = useRef(false);
 
   useEffect(() => () => clearTimeout(settleTimer.current), []);
 
@@ -49,26 +47,17 @@ export function TabPager<T extends string>({
     const track = trackRef.current;
     if (!track) return;
     const index = tabs.indexOf(tab);
-    if (index < 0) return;
-    indexRef.current = index;
-    if (scrub !== null && scrub !== undefined) return;
+    if (index >= 0) indexRef.current = index;
+    if (scrubbing.current || index < 0) return;
     const instant = !ready.current || dragging.current || reducedMotion();
     ready.current = true;
     const target = index * track.clientWidth;
-    if (Math.abs(track.scrollLeft - target) < 1) return;
-    track.scrollTo({ left: target, behavior: instant ? "auto" : "smooth" });
-  }, [tab, tabs, scrub]);
-
-  useLayoutEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    if (scrub === null || scrub === undefined) {
+    if (Math.abs(track.scrollLeft - target) < 1) {
       track.style.scrollSnapType = "";
       return;
     }
-    track.style.scrollSnapType = "none";
-    track.scrollLeft = scrub * track.clientWidth;
-  }, [scrub]);
+    track.scrollTo({ left: target, behavior: instant ? "auto" : "smooth" });
+  }, [tab, tabs]);
 
   useEffect(() => {
     const track = trackRef.current;
@@ -83,9 +72,27 @@ export function TabPager<T extends string>({
     return () => observer.disconnect();
   }, []);
 
+  const scrub = (position: number | null) => {
+    const track = trackRef.current;
+    if (!track || !track.clientWidth) return;
+    if (position === null) {
+      scrubbing.current = false;
+      track.style.scrollSnapType = "";
+      const index = Math.round(track.scrollLeft / track.clientWidth);
+      track.scrollTo({ left: index * track.clientWidth, behavior: reducedMotion() ? "auto" : "smooth" });
+      return;
+    }
+    scrubbing.current = true;
+    track.style.scrollSnapType = "none";
+    track.scrollLeft = position * track.clientWidth;
+  };
+
+  if (scrubRef) scrubRef.current = scrub;
+
   const settle = () => {
     const track = trackRef.current;
     if (!track || !track.clientWidth) return;
+    if (!scrubbing.current) track.style.scrollSnapType = "";
     dragging.current = false;
     const index = Math.round(track.scrollLeft / track.clientWidth);
     const next = tabs[Math.min(Math.max(index, 0), tabs.length - 1)];

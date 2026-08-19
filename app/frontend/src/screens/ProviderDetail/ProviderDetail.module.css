@@ -336,20 +336,10 @@
 }
 
 
-@keyframes ts-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 0.25;
-  }
-}
-
 .skel {
+  composes: pulse from "../../styles/anim.module.css";
   border-radius: 6px;
   background: var(--ts-seg);
-  animation: ts-pulse 1.1s ease-in-out infinite;
 }
 
 .skelBalanceLabel {
@@ -427,4 +417,9 @@
   composes: skel;
   width: 84px;
   height: 14px;
+}
+
+.mark {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }

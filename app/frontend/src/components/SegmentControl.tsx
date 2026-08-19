@@ -4,8 +4,6 @@ import { useSegmentDrag } from "@/hooks/useSegmentDrag";
 import { useRef } from "react";
 import styles from "./SegmentControl.module.css";
 
-const PADDING = 2;
-
 interface SegmentOption<T> {
   value: T;
   label: string;
@@ -40,20 +38,21 @@ export function SegmentControl<T>({
     onChange(option.value);
   };
 
-  const { offset, handlers } = useSegmentDrag(boxRef, options.length, PADDING, activeIndex, select);
+  const { offset, handlers } = useSegmentDrag(boxRef, options.length, activeIndex, select);
 
   return (
     <div
       ref={boxRef}
       className={styles.box}
       style={{ height }}
+      role="radiogroup"
       data-no-drag
       {...handlers}
     >
       <span
         className={cx(styles.thumb, offset !== null && styles.thumbHeld)}
         style={{
-          width: `calc((100% - ${PADDING * 2}px) / ${options.length})`,
+          width: `calc((100% - 4px) / ${options.length})`,
           transform: offset === null ? `translateX(${activeIndex * 100}%)` : `translateX(${offset}px)`,
         }}
       />
@@ -61,6 +60,8 @@ export function SegmentControl<T>({
         <button
           key={String(option.value)}
           type="button"
+          role="radio"
+          aria-checked={index === activeIndex}
           className={cx(styles.option, index === activeIndex && styles.active)}
           style={{ fontSize }}
           onClick={() => select(index)}

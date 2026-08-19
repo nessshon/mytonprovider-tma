@@ -1,4 +1,5 @@
 import { cx } from "@/lib/cx";
+import { reducedMotion } from "@/lib/motion";
 import { createContext, type ReactNode, useContext, useEffect, useRef } from "react";
 import styles from "./Sheet.module.css";
 import type { SheetHeight } from "./presentation";
@@ -27,14 +28,27 @@ interface SheetProps {
 
 export function Sheet({ height, depth, top, closing, title, subtitle, onDismiss, onClosed, children }: SheetProps) {
   const layerRef = useRef<HTMLDivElement>(null);
-  const sheetRef = useRef<HTMLDivElement | null>(null);
   const scrimRef = useRef<HTMLDivElement>(null);
-  const { ref: dragRef, offset, dragging, handlers } = useSheetDrag(top && !closing, onDismiss);
+  const grabberRef = useRef<HTMLButtonElement>(null);
+  const { ref: dragRef, element: sheetRef, offset, dragging, handlers } = useSheetDrag(top && !closing, onDismiss);
 
   useEffect(() => {
     const layer = layerRef.current;
     if (layer) layer.inert = !top;
   }, [top]);
+
+  const opener = useRef<Element | null>(null);
+  opener.current ??= document.activeElement;
+
+  useEffect(() => {
+    grabberRef.current?.focus({ preventScroll: true });
+    return () => {
+      const previous = opener.current;
+      requestAnimationFrame(() => {
+        if (previous instanceof HTMLElement && document.contains(previous)) previous.focus({ preventScroll: true });
+      });
+    };
+  }, []);
 
   const closed = useRef(onClosed);
   closed.current = onClosed;
@@ -43,15 +57,16 @@ export function Sheet({ height, depth, top, closing, title, subtitle, onDismiss,
     const sheet = sheetRef.current;
     if (!closing || !sheet) return;
     const from = getComputedStyle(sheet).transform;
+    const duration = reducedMotion() ? 0 : CLOSE_MS;
     const slide = sheet.animate([{ transform: from === "none" ? "translateY(0px)" : from }, { transform: "translateY(100%)" }], {
-      duration: CLOSE_MS,
+      duration,
       easing: CLOSE_EASE,
       fill: "forwards",
     });
     const scrim = scrimRef.current;
     if (scrim) {
       scrim.animate([{ opacity: getComputedStyle(scrim).opacity }, { opacity: 0 }], {
-        duration: CLOSE_MS,
+        duration,
         easing: CLOSE_EASE,
         fill: "forwards",
       });
@@ -76,10 +91,7 @@ export function Sheet({ height, depth, top, closing, title, subtitle, onDismiss,
     >
       <div ref={scrimRef} className={styles.scrim} onClick={top && !closing ? onDismiss : undefined} />
       <div
-        ref={(element) => {
-          sheetRef.current = element;
-          dragRef(element);
-        }}
+        ref={dragRef}
         className={cx(
           styles.sheet,
           styles[height],
@@ -89,7 +101,7 @@ export function Sheet({ height, depth, top, closing, title, subtitle, onDismiss,
         style={offset > 0 ? { transform: `translateY(${offset}px)` } : undefined}
         {...handlers}
       >
-        <button type="button" className={styles.grabber} aria-label="Close" onClick={onDismiss} />
+        <button ref={grabberRef} type="button" className={styles.grabber} aria-label="Close" onClick={onDismiss} />
         {title && <div className={styles.title}>{title}</div>}
         {subtitle && <div className={styles.subtitle}>{subtitle}</div>}
         <SheetContext.Provider value>

@@ -1,5 +1,6 @@
 import { endSession } from "@/app/session";
 import { Icon } from "@/components/Icon/Icon";
+import type { GlyphName } from "@/components/Icon/glyphs";
 import { SegmentControl } from "@/components/SegmentControl";
 import { TelegramLoginButton } from "@/components/TelegramLoginButton";
 import { setExplorer, setLanguage, setTheme } from "@/data/sync";
@@ -12,6 +13,44 @@ import { type Explorer, type Theme, useSettings } from "@/stores/settings";
 import { useTrusted } from "@/stores/trusted";
 import { useNavigate } from "react-router-dom";
 import styles from "./MenuSheet.module.css";
+
+interface MenuRowProps {
+  glyph: GlyphName;
+  label: string;
+  count?: number;
+  href?: string;
+  external?: boolean;
+  onClick?: () => void;
+}
+
+function MenuRow({ glyph, label, count, href, external, onClick }: MenuRowProps) {
+  const body = (
+    <>
+      <span className={styles.tile}>
+        <Icon glyph={glyph} size={17} color="var(--ts-on-accent)" />
+      </span>
+      {label}
+      <span className={styles.tail}>
+        {count ? <span className={styles.count}>{count}</span> : null}
+        <Icon glyph={external ? "external" : "chevron"} size={external ? 15 : 16} color="var(--ts-hint)" />
+      </span>
+    </>
+  );
+
+  if (!href) {
+    return (
+      <button type="button" className={styles.row} onClick={onClick}>
+        {body}
+      </button>
+    );
+  }
+
+  return (
+    <a className={styles.row} href={href} {...(external && { target: "_blank", rel: "noopener noreferrer" })}>
+      {body}
+    </a>
+  );
+}
 
 export function MenuSheet() {
   const t = useT();
@@ -95,72 +134,11 @@ export function MenuSheet() {
       />
 
       <div className={styles.group}>
-        {isAdmin && (
-          <a className={styles.row} href={`/admin/#theme=${theme}`}>
-            <span className={styles.tile}>
-              <Icon glyph="sliders" size={17} color="var(--ts-on-accent)" />
-            </span>
-            {t.adminPanel}
-            <span className={styles.tail}>
-              <Icon glyph="chevron" size={16} color="var(--ts-hint)" />
-            </span>
-          </a>
-        )}
-        <button
-          type="button"
-          className={styles.row}
-          onClick={() => navigate("/bags")}
-        >
-          <span className={styles.tile}>
-            <Icon glyph="search" size={17} color="var(--ts-on-accent)" />
-          </span>
-          {t.explorerTitle}
-          <span className={styles.tail}>
-            <Icon glyph="chevron" size={16} color="var(--ts-hint)" />
-          </span>
-        </button>
-        <button
-          type="button"
-          className={styles.row}
-          onClick={() => navigate("/trusted")}
-        >
-          <span className={styles.tile}>
-            <Icon glyph="check" size={17} color="var(--ts-on-accent)" />
-          </span>
-          {t.trustedTitle}
-          <span className={styles.tail}>
-            {trustedCount > 0 && <span className={styles.count}>{trustedCount}</span>}
-            <Icon glyph="chevron" size={16} color="var(--ts-hint)" />
-          </span>
-        </button>
-        <a
-          className={styles.row}
-          href="https://github.com/igroman787/mytonprovider"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span className={styles.tile}>
-            <Icon glyph="server" size={17} color="var(--ts-on-accent)" />
-          </span>
-          {t.becomeProvider}
-          <span className={styles.tail}>
-            <Icon glyph="external" size={15} color="var(--ts-hint)" />
-          </span>
-        </a>
-        <a
-          className={styles.row}
-          href="https://t.me/mytonprovider_chat"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span className={styles.tile}>
-            <Icon glyph="telegram" size={17} color="var(--ts-on-accent)" />
-          </span>
-          {t.support}
-          <span className={styles.tail}>
-            <Icon glyph="external" size={15} color="var(--ts-hint)" />
-          </span>
-        </a>
+        {isAdmin && <MenuRow glyph="sliders" label={t.adminPanel} href={`/admin/#theme=${theme}`} />}
+        <MenuRow glyph="search" label={t.explorerTitle} onClick={() => navigate("/bags")} />
+        <MenuRow glyph="check" label={t.trustedTitle} count={trustedCount} onClick={() => navigate("/trusted")} />
+        <MenuRow glyph="server" label={t.becomeProvider} href="https://github.com/igroman787/mytonprovider" external />
+        <MenuRow glyph="telegram" label={t.support} href="https://t.me/mytonprovider_chat" external />
       </div>
     </>
   );

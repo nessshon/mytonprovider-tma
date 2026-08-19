@@ -13,7 +13,6 @@ function adaptTelemetry(t: TelemetryDto): Telemetry {
     cpuVirtual: t.cpu_is_virtual ?? null,
     totalRam: t.total_ram ?? null,
     usageRam: t.usage_ram ?? null,
-    ramUsagePercent: t.ram_usage_percent ?? null,
     diskRead: t.qd64_disk_read_speed ?? null,
     diskWrite: t.qd64_disk_write_speed ?? null,
     downloadSpeed: t.speedtest_download ?? null,

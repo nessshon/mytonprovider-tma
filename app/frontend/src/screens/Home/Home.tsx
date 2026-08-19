@@ -1,4 +1,5 @@
 import { Callout } from "@/components/Callout";
+import { Field } from "@/components/Field";
 import { FloatingTabs } from "@/components/FloatingTabs";
 import { Icon } from "@/components/Icon/Icon";
 import { RoundToggle } from "@/components/RoundToggle";
@@ -58,7 +59,7 @@ export function Home() {
   useEffect(() => () => clearTimeout(reloadTimer.current), []);
   const [progress, setProgress] = useState(TABS.indexOf(tab));
   const [showTop, setShowTop] = useState(false);
-  const [scrub, setScrub] = useState<number | null>(null);
+  const scrubRef = useRef<(position: number | null) => void>(() => {});
   const [spinning, setSpinning] = useState(false);
 
   useEffect(() => {
@@ -143,11 +144,11 @@ export function Home() {
     />
   );
 
-  const listHero = <Callout hero icon={<TonLogo />} title={t.mainTitle} desc={t.mainDesc} />;
+  const listHero = <Callout hero icon={<TonLogo />} title={t.mainTitle} />;
 
-  const subsHero = <Callout hero glyph="bell" title={t.subsTitle} desc={t.subsDesc} />;
+  const subsHero = <Callout hero glyph="bell" title={t.subsTitle} />;
 
-  const favHero = <Callout hero glyph="star" title={t.favTitle} desc={t.favDesc} />;
+  const favHero = <Callout hero glyph="star" title={t.favTitle} />;
 
   const sortToolbar = (
     <div className={styles.toolbar}>
@@ -272,20 +273,19 @@ export function Home() {
   return (
     <div className={styles.screen}>
       <nav className={styles.nav}>
-        <div className={styles.search}>
-          <Icon glyph="search" size={16} color="var(--ts-hint)" />
-          <input
-            className={styles.searchInput}
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={tab === "subs" ? t.searchSubs : tab === "fav" ? t.searchFav : t.searchPlaceholder}
-          />
-          {search && (
-            <button type="button" aria-label="Clear" className={styles.searchClear} onClick={() => setSearch("")}>
-              <Icon glyph="close" size={16} color="var(--ts-hint)" stroke={2} />
-            </button>
-          )}
-        </div>
+        <Field
+          glyph="search"
+          value={search}
+          onChange={setSearch}
+          placeholder={tab === "subs" ? t.searchSubs : tab === "fav" ? t.searchFav : t.searchPlaceholder}
+          trailing={
+            search && (
+              <button type="button" aria-label="Clear" className={styles.searchClear} onClick={() => setSearch("")}>
+                <Icon glyph="close" size={16} color="var(--ts-hint)" stroke={2} />
+              </button>
+            )
+          }
+        />
         <div className={styles.navActions}>
           <button type="button" aria-label="Refresh" className={styles.headerBtn} onClick={onReload}>
             <span className={spinning ? styles.spin : undefined}>
@@ -301,7 +301,7 @@ export function Home() {
       <TabPager
         tabs={TABS}
         tab={tab}
-        scrub={scrub}
+        scrubRef={scrubRef}
         panes={panes}
         onTabChange={setTab}
         onProgress={setProgress}
@@ -324,13 +324,13 @@ export function Home() {
       <FloatingTabs
         tabs={[
           { key: "subs", label: t.subs, glyph: "bell" },
-          { key: "list", label: t.list, glyph: "grid" },
+          { key: "list", label: t.list, icon: (active) => <TonLogo size={22} mono filled={active} /> },
           { key: "fav", label: t.fav, glyph: "star" },
         ]}
         tab={tab}
         progress={progress}
         onSelect={setTab}
-        onScrub={setScrub}
+        onScrub={(position) => scrubRef.current(position)}
       />
 
     </div>

@@ -8,7 +8,7 @@ import {
 } from "@/data/backend";
 import { OWNER_PERIOD_API, type OwnerChartRange, type OwnerPeriod } from "@/data/owner";
 import { useAuth } from "@/stores/auth";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { create } from "zustand";
 
 const CACHE_TTL_MS = 60_000;
@@ -116,7 +116,6 @@ export function useOwnerData(
   const token = useAuth((s) => s.token);
   const tick = useOwnerRevalidation((s) => s.tick);
   const [payload, setPayload] = useState<OwnerPayload | null>(null);
-  const hasData = useRef(false);
   const [denied, setDenied] = useState(false);
   const [failed, setFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -129,12 +128,11 @@ export function useOwnerData(
       setRefreshing(false);
       return;
     }
-    if (!hasData.current) setRefreshing(true);
+    setRefreshing(true);
     let alive = true;
     composedOwner(pubkey, period, chartRange)
       .then((data) => {
         if (!alive) return;
-        hasData.current = true;
         setPayload(data);
         setFailed(false);
         setRefreshing(false);

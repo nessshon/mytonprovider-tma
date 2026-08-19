@@ -38,17 +38,12 @@
   cursor: default;
 }
 
-@keyframes ts-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .spinner {
+  composes: spin from "../styles/anim.module.css";
+  animation-duration: 0.7s;
   width: 18px;
   height: 18px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.4);
   border-top-color: #fff;
-  animation: ts-spin 0.7s linear infinite;
 }

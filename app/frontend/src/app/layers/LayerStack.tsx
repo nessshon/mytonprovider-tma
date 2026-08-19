@@ -34,6 +34,7 @@ export function LayerStack({ children }: { children: ReactNode }) {
   const [entries, setEntries] = useState<Entry[]>(() => initialEntries(location));
   const [dialogs, setDialogs] = useState<DialogSlot[]>([]);
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
+  const baseRef = useRef<HTMLDivElement>(null);
   const nextId = useRef(1);
 
   useLayoutEffect(() => {
@@ -85,6 +86,8 @@ export function LayerStack({ children }: { children: ReactNode }) {
     const root = document.documentElement;
     if (layered) root.dataset.layered = "";
     else delete root.dataset.layered;
+    const base = baseRef.current;
+    if (base) base.inert = layered;
   }, [layered]);
 
   const drop = (key: string) => setEntries((prev) => prev.filter((entry) => entry.key !== key));
@@ -106,7 +109,7 @@ export function LayerStack({ children }: { children: ReactNode }) {
 
   return (
     <LayerContext.Provider value={host}>
-      <div className={styles.base} data-layered={layered ? "" : undefined}>
+      <div ref={baseRef} className={styles.base} data-layered={layered ? "" : undefined}>
         <Routes location={entries[0].location}>{children}</Routes>
       </div>
       {layers.map((entry, index) => (

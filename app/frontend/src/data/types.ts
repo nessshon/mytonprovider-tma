@@ -21,7 +21,6 @@ export interface Telemetry {
   cpuVirtual: boolean | null;
   totalRam: number | null;
   usageRam: number | null;
-  ramUsagePercent: number | null;
   diskRead: string | null;
   diskWrite: string | null;
   downloadSpeed: number | null;

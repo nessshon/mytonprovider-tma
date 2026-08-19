@@ -21,8 +21,6 @@
   --ts-sheet-ms: 380ms;
   --ts-sheet-out-ms: 260ms;
   --ts-sheet-ease: cubic-bezier(0.32, 0.72, 0, 1);
-  --ts-tap-ms: 150ms;
-  --ts-tap-scale: 0.98;
 }
 
 [data-theme="dark"] {
@@ -37,7 +35,6 @@
   --ts-navbg: rgba(14, 14, 17, 0.94);
   --ts-seg: rgba(118, 118, 128, 0.24);
   --ts-thumb: #6c6c72;
-  --ts-star: #48484a;
   --ts-backdrop: #000000;
   --ts-card-shadow: 0 0 55px rgba(200, 205, 215, 0.2);
 }
@@ -54,7 +51,6 @@
   --ts-navbg: rgba(239, 239, 244, 0.94);
   --ts-seg: rgba(118, 118, 128, 0.14);
   --ts-thumb: #ffffff;
-  --ts-star: #c7c7cc;
   --ts-backdrop: #e3e3e9;
   --ts-card-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
 }

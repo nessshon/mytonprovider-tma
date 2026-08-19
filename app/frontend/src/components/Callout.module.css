@@ -38,8 +38,7 @@
 }
 
 .hero {
-  justify-content: flex-start;
-  padding: 16px 12px 4px;
+  padding: 16px 12px 10px;
   min-height: 0;
 }
 
@@ -60,11 +59,4 @@
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.4px;
-}
-
-.hero .desc {
-  margin-top: 6px;
-  max-width: 340px;
-  font-size: 14.5px;
-  line-height: 1.4;
 }

@@ -1,5 +1,6 @@
 import { Card } from "@/components/Card";
 import { Callout } from "@/components/Callout";
+import { Field } from "@/components/Field";
 import { Icon } from "@/components/Icon/Icon";
 import { Screen } from "@/components/Screen";
 import { ScreenHeader } from "@/components/ScreenHeader";
@@ -44,27 +45,23 @@ export function Trusted() {
 
   return (
     <Screen header={header}>
-      <div className={cx(styles.field, invalid !== "none" && styles.fieldError)}>
-        <input
-          className={styles.input}
-          value={value}
-          placeholder={t.trustedPlaceholder}
-          enterKeyHint="done"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          onChange={(event) => {
-            setValue(event.target.value);
-            setInvalid("none");
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") submit();
-          }}
-        />
-        <button type="button" className={styles.add} disabled={!value.trim()} onClick={submit}>
-          {t.trustedAdd}
-        </button>
-      </div>
+      <Field
+        className={styles.field}
+        value={value}
+        onChange={(next) => {
+          setValue(next);
+          setInvalid("none");
+        }}
+        placeholder={t.trustedPlaceholder}
+        enterKeyHint="done"
+        invalid={invalid !== "none"}
+        onEnter={submit}
+        trailing={
+          <button type="button" className={styles.add} disabled={!value.trim()} onClick={submit}>
+            {t.trustedAdd}
+          </button>
+        }
+      />
       <div className={styles.error}>
         {invalid === "format" ? t.trustedInvalid : invalid === "duplicate" ? t.trustedDuplicate : ""}
       </div>

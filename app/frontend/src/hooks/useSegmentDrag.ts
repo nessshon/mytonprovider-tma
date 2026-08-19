@@ -1,65 +1,95 @@
 import { type PointerEvent as ReactPointerEvent, type RefObject, useRef, useState } from "react";
 
+const SLOP = 4;
+
+interface Held {
+  pointerId: number;
+  startX: number;
+  grab: number;
+  index: number;
+  active: boolean;
+}
+
 interface SegmentDrag {
   offset: number | null;
   handlers: {
     onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void;
     onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => void;
-    onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void;
-    onPointerCancel: (event: ReactPointerEvent<HTMLDivElement>) => void;
+    onPointerUp: () => void;
+    onPointerCancel: () => void;
+    onLostPointerCapture: (event: ReactPointerEvent<HTMLDivElement>) => void;
   };
 }
 
 export function useSegmentDrag(
   boxRef: RefObject<HTMLDivElement>,
   count: number,
-  padding: number,
   activeIndex: number,
   onIndex: (index: number) => void,
   onScrub?: (position: number | null) => void,
 ): SegmentDrag {
-  const grab = useRef(0);
+  const held = useRef<Held | null>(null);
   const [offset, setOffset] = useState<number | null>(null);
 
   const metrics = () => {
     const box = boxRef.current;
     if (!box) return null;
     const rect = box.getBoundingClientRect();
+    const padding = parseFloat(getComputedStyle(box).paddingLeft) || 0;
     const span = (rect.width - padding * 2) / count;
     return { left: rect.left + padding, span, limit: (count - 1) * span };
   };
 
-  const move = (clientX: number, from: number) => {
+  const apply = (clientX: number) => {
     const size = metrics();
-    if (!size) return;
-    const position = Math.max(0, Math.min(size.limit, clientX - size.left - from));
+    const drag = held.current;
+    if (!size || !drag) return;
+    const position = Math.max(0, Math.min(size.limit, clientX - size.left - drag.grab));
     setOffset(position);
     onScrub?.(position / size.span);
-    onIndex(Math.max(0, Math.min(count - 1, Math.round(position / size.span))));
+    const index = Math.max(0, Math.min(count - 1, Math.round(position / size.span)));
+    if (index === drag.index) return;
+    drag.index = index;
+    onIndex(index);
+  };
+
+  const stop = () => {
+    if (!held.current) return;
+    held.current = null;
+    setOffset(null);
+    onScrub?.(null);
   };
 
   return {
     offset,
     handlers: {
       onPointerDown: (event) => {
+        if (event.button !== 0 || !event.isPrimary) return;
         const size = metrics();
         if (!size) return;
-        boxRef.current?.setPointerCapture(event.pointerId);
-        const thumbLeft = activeIndex * size.span;
-        const inside = event.clientX - size.left - thumbLeft;
-        grab.current = inside >= 0 && inside <= size.span ? inside : size.span / 2;
-        move(event.clientX, grab.current);
+        const inside = event.clientX - size.left - activeIndex * size.span;
+        held.current = {
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          grab: inside >= 0 && inside <= size.span ? inside : size.span / 2,
+          index: activeIndex,
+          active: false,
+        };
       },
       onPointerMove: (event) => {
-        if (offset !== null) move(event.clientX, grab.current);
+        const drag = held.current;
+        if (!drag || event.pointerId !== drag.pointerId) return;
+        if (!drag.active) {
+          if (Math.abs(event.clientX - drag.startX) < SLOP) return;
+          drag.active = true;
+          boxRef.current?.setPointerCapture(event.pointerId);
+        }
+        apply(event.clientX);
       },
-      onPointerUp: () => {
-        setOffset(null);
-        onScrub?.(null);
-      },
-      onPointerCancel: () => {
-        setOffset(null);
-        onScrub?.(null);
+      onPointerUp: stop,
+      onPointerCancel: stop,
+      onLostPointerCapture: (event) => {
+        if (event.target === boxRef.current) stop();
       },
     },
   };

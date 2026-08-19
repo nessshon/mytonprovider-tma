@@ -39,7 +39,7 @@ export function init(options: {
             tp = themeParams.state();
           } else {
             firstThemeSent = true;
-            tp ||= retrieveLaunchParams().tgWebAppThemeParams;
+            tp = retrieveLaunchParams().tgWebAppThemeParams;
           }
           return emitEvent("theme_changed", { theme_params: tp });
         }

@@ -3,16 +3,16 @@ import type { GlyphName } from "@/components/Icon/glyphs";
 import { cx } from "@/lib/cx";
 import { tick } from "@/lib/telegram";
 import { useSegmentDrag } from "@/hooks/useSegmentDrag";
-import { type KeyboardEvent, useEffect, useRef } from "react";
+import { type KeyboardEvent, type ReactNode, useEffect, useRef } from "react";
 import styles from "./FloatingTabs.module.css";
 
 const DOCK_SPACE = "74px";
-const BAR_PADDING = 4;
 
 interface FloatingTab<T extends string> {
   key: T;
   label: string;
-  glyph: GlyphName;
+  glyph?: GlyphName;
+  icon?: (active: boolean) => ReactNode;
 }
 
 interface FloatingTabsProps<T extends string> {
@@ -47,7 +47,6 @@ export function FloatingTabs<T extends string>({ tabs, tab, progress, onSelect, 
   const { offset, handlers } = useSegmentDrag(
     barRef,
     tabs.length,
-    BAR_PADDING,
     activeIndex,
     (index) => {
       const next = tabs[index];
@@ -61,7 +60,9 @@ export function FloatingTabs<T extends string>({ tabs, tab, progress, onSelect, 
     if (!step) return;
     event.preventDefault();
     const next = tabs[Math.min(Math.max(activeIndex + step, 0), tabs.length - 1)];
-    if (next) select(next.key);
+    if (!next) return;
+    select(next.key);
+    document.getElementById(`tab-${next.key}`)?.focus();
   };
 
   return (
@@ -75,9 +76,9 @@ export function FloatingTabs<T extends string>({ tabs, tab, progress, onSelect, 
         {...handlers}
       >
         <span
-          className={cx(styles.thumb, offset !== null && styles.thumbHeld)}
+          className={styles.thumb}
           style={{
-            width: `calc((100% - ${BAR_PADDING * 2}px) / ${tabs.length})`,
+            width: `calc((100% - 8px) / ${tabs.length})`,
             transform: offset === null ? `translateX(${thumb * 100}%)` : `translateX(${offset}px)`,
           }}
         />
@@ -95,7 +96,7 @@ export function FloatingTabs<T extends string>({ tabs, tab, progress, onSelect, 
               className={cx(styles.tab, active && styles.active)}
               onClick={() => select(item.key)}
             >
-              <Icon glyph={item.glyph} size={22} filled={active} />
+              {item.icon ? item.icon(active) : item.glyph && <Icon glyph={item.glyph} size={22} filled={active} />}
               <span className={styles.label}>{item.label}</span>
             </button>
           );

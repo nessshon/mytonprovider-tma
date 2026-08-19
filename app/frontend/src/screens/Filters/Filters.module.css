@@ -26,12 +26,11 @@
 }
 
 .sortChevron {
-  display: inline-flex;
-  transition: transform 0.2s ease;
+  composes: chevron from "../../styles/list.module.css";
 }
 
 .sortChevronUp {
-  transform: rotate(180deg);
+  composes: chevronUp from "../../styles/list.module.css";
 }
 
 .subLabel {

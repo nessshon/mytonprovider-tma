@@ -36,10 +36,6 @@
   will-change: transform;
 }
 
-.thumbHeld {
-  transition: none;
-}
-
 .tab {
   position: relative;
   z-index: 1;

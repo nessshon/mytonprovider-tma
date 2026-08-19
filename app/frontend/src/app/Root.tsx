@@ -13,7 +13,15 @@ export function Root() {
   const banned = useAuth((state) => state.banned);
   const t = useT();
   return (
-    <ErrorBoundary>
+    <ErrorBoundary
+      fallback={() => (
+        <Callout desc={t.loadError}>
+          <button type="button" className={styles.logout} onClick={() => location.reload()}>
+            {t.retry}
+          </button>
+        </Callout>
+      )}
+    >
       <ThemeGate>
         <AppShell>
           {banned ? (
