@@ -1,7 +1,7 @@
 import { useAuth } from "@/stores/auth";
 import type { Explorer, Theme } from "@/stores/settings";
 
-const BACKEND_BASE = import.meta.env.VITE_BACKEND_BASE ?? (import.meta.env.DEV ? "http://localhost:8080" : "");
+const BACKEND_BASE = import.meta.env.VITE_BACKEND_BASE ?? "";
 
 export class BackendError extends Error {
   status: number;

@@ -70,8 +70,10 @@ pnpm install
 pnpm dev
 ```
 
-The dev frontend calls the backend at `http://localhost:8080` and mocks the login. Outside Telegram the production
-app authenticates through the Telegram Login Widget.
+The dev server proxies `/api` to `$BACKEND`, `http://localhost:8080` by default, so the frontend can run against a
+local backend or a deployed one (`BACKEND=https://example.org pnpm dev`, or the same line in `app/frontend/.env.local`).
+Outside Telegram the app authenticates through the Telegram Login Widget, which only works on the domain registered
+with the bot.
 
 ## Environment Variables
 
