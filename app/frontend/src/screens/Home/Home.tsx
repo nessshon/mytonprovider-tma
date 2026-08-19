@@ -1,34 +1,34 @@
-import { BottomNav } from "@/components/BottomNav";
 import { EmptyState } from "@/components/EmptyState";
+import { FloatingTabs } from "@/components/FloatingTabs";
 import { Icon } from "@/components/Icon/Icon";
-import { LoadMore } from "@/components/LoadMore";
 import { MenuSheet } from "@/components/MenuSheet";
-import { ProviderRow } from "@/components/ProviderRow";
 import { RoundToggle } from "@/components/RoundToggle";
+import { TabPager } from "@/components/TabPager";
 import { TelegramLoginButton } from "@/components/TelegramLoginButton";
 import { countActiveFilters, selectCatalog } from "@/data/query";
+import { hydrateFromServer, setAlertsEnabled, toggleBell, toggleFavorite } from "@/data/sync";
+import type { Provider } from "@/data/types";
 import { useT } from "@/i18n";
 import { cx } from "@/lib/cx";
 import { isInTelegram } from "@/lib/telegram";
 import { useAlerts } from "@/stores/alerts";
 import { useAuth } from "@/stores/auth";
 import { useCatalog } from "@/stores/catalog";
-import { PAGE_SIZE, useCatalogQuery } from "@/stores/catalogQuery";
-import { hydrateFromServer, setAlertsEnabled, toggleBell, toggleFavorite } from "@/data/sync";
+import { PAGE_SIZE, type Tab, useCatalogQuery } from "@/stores/catalogQuery";
 import { useFavorites } from "@/stores/favorites";
 import { useSubscriptions } from "@/stores/subscriptions";
 import { useUi } from "@/stores/ui";
-import { type UIEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./Home.module.css";
+import { ProviderPane } from "./ProviderPane";
 import { TonLogo } from "./TonLogo";
 
 const RELOAD_SPIN_MS = 1100;
 const SCROLL_TOP_THRESHOLD = 360;
-const BOTTOM_SAFE_ZONE = 120;
 const SKELETON_MIN = 3;
 const LIST_SKELETON_MIN = 6;
-const CELL_COUNT = 6;
+const TABS = ["list", "subs", "fav"] as const;
 
 export function Home() {
   const t = useT();
@@ -46,26 +46,23 @@ export function Home() {
   const sort = useCatalogQuery((s) => s.sort);
   const filters = useCatalogQuery((s) => s.filters);
   const visible = useCatalogQuery((s) => s.visible);
+  const setTab = useCatalogQuery((s) => s.setTab);
   const setSearch = useCatalogQuery((s) => s.setSearch);
   const setSortField = useCatalogQuery((s) => s.setSortField);
   const loadMore = useCatalogQuery((s) => s.loadMore);
 
   const favorites = useFavorites((s) => s.favorites);
-
-
   const loggedIn = useAuth((s) => s.loggedIn);
-
   const subscribed = useSubscriptions((s) => s.subscribed);
   const alertsOff = useSubscriptions((s) => s.alertsOff);
-
-
   const alertEnabled = useAlerts((s) => s.enabled);
   const menuOpen = useUi((s) => s.menuOpen);
   const setMenuOpen = useUi((s) => s.setMenuOpen);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const panes = useRef<Record<string, HTMLDivElement | null>>({});
   const reloadTimer = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(reloadTimer.current), []);
+  const [progress, setProgress] = useState(TABS.indexOf(tab));
   const [showTop, setShowTop] = useState(false);
   const [spinning, setSpinning] = useState(false);
 
@@ -73,17 +70,15 @@ export function Home() {
     void load();
   }, [load]);
 
-  const favTab = tab === "fav" && !search;
-  const isSubsTab = tab === "subs" && !search;
-
-  const catalog = useMemo(
-    () => selectCatalog(providers, { favTab, search, filters, sort, favorites, bounds }),
-    [providers, favTab, search, filters, sort, favorites, bounds],
+  const listItems = useMemo(
+    () => selectCatalog(providers, { favTab: false, search, filters, sort, favorites, bounds }),
+    [providers, search, filters, sort, favorites, bounds],
   );
-  const items = isSubsTab ? [] : catalog;
-  const shown = items.slice(0, visible);
-
-  const subProviders = useMemo(() => {
+  const favItems = useMemo(
+    () => selectCatalog(providers, { favTab: true, search, filters, sort, favorites, bounds }),
+    [providers, search, filters, sort, favorites, bounds],
+  );
+  const subItems = useMemo(() => {
     if (!loggedIn) return [];
     const query = search.trim().toLowerCase();
     return providers.filter(
@@ -93,7 +88,7 @@ export function Home() {
 
   const activeFilters = countActiveFilters(filters);
   const initialLoading = status !== "ready" && status !== "error";
-  const showSkeleton = (spinning || initialLoading) && (isSubsTab ? loggedIn : true);
+  const loading = spinning || initialLoading;
   const isError = status === "error" && providers.length === 0;
 
   const onReload = () => {
@@ -106,59 +101,174 @@ export function Home() {
     reloadTimer.current = setTimeout(() => setSpinning(false), RELOAD_SPIN_MS);
   };
 
-  const onScroll = (event: UIEvent<HTMLDivElement>) => {
-    const { scrollTop, clientHeight, scrollHeight } = event.currentTarget;
-    const atBottom = scrollTop + clientHeight > scrollHeight - BOTTOM_SAFE_ZONE;
-    setShowTop(scrollTop > SCROLL_TOP_THRESHOLD && !atBottom);
+  const onPaneScroll = (paneTab: Tab, scrollTop: number) => {
+    if (paneTab === tab) setShowTop(scrollTop > SCROLL_TOP_THRESHOLD);
   };
 
   const scrollToTop = () => {
-    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    panes.current[tab]?.scrollTo({ top: 0, behavior: "smooth" });
+    setShowTop(false);
   };
 
-  const skeletonCount = isSubsTab
-    ? Math.max(subProviders.length, SKELETON_MIN)
-    : Math.min(Math.max(shown.length, LIST_SKELETON_MIN), PAGE_SIZE);
+  const openProvider = (pubkey: string) => navigate(`/provider/${pubkey}`);
 
-  const showToolbar = tab === "list" && providers.length > 0;
-  const showCount = isSubsTab ? loggedIn && subProviders.length > 0 : items.length > 0;
-  const homeCount = isSubsTab
-    ? t.showing(subProviders.length, subProviders.length)
-    : t.showing(shown.length, items.length);
+  const starToggle = (provider: Provider) => (
+    <RoundToggle
+      glyph="star"
+      size={18}
+      active={favorites.includes(provider.pubkey)}
+      ariaLabel={t.fav}
+      onClick={(event) => {
+        event.stopPropagation();
+        toggleFavorite(provider.pubkey);
+      }}
+    />
+  );
 
-  const showSubsRows = !showSkeleton && isSubsTab && loggedIn && subProviders.length > 0;
-  const showSubsToolbar = showSubsRows;
-  const showSubsLogin = isSubsTab && !loggedIn;
-  const showError = isError && !showSubsLogin && !showSkeleton;
-  const showSubsEmpty = !showSkeleton && isSubsTab && loggedIn && subProviders.length === 0 && !showError;
-  const showRows = !showSkeleton && !isSubsTab && shown.length > 0;
-  const showEmpty = !showSkeleton && !isSubsTab && !isError && items.length === 0;
+  const bellToggle = (provider: Provider) => (
+    <RoundToggle
+      glyph="bell"
+      size={17}
+      active={!alertsOff.includes(provider.pubkey)}
+      ariaLabel={t.notifBtn}
+      onClick={(event) => {
+        event.stopPropagation();
+        toggleBell(provider.pubkey);
+      }}
+    />
+  );
+
+  const hero = (
+    <div className={styles.hero}>
+      <span className={styles.heroLogo}>
+        <TonLogo />
+      </span>
+      <div className={styles.heroTitle}>{t.mainTitle}</div>
+      <div className={styles.heroDesc}>{t.mainDesc}</div>
+    </div>
+  );
+
+  const listToolbar = providers.length > 0 && (
+    <div className={styles.toolbar}>
+      <button type="button" className={styles.toolbarBtn} onClick={() => setSortField(sort.field)}>
+        <span className={cx(styles.sortChevron, sort.dir === "asc" && styles.sortChevronUp)}>
+          <Icon glyph="chevronDown" size={13} color="var(--ts-accent)" />
+        </span>
+        {t.sortField[sort.field]}
+      </button>
+      <button type="button" className={styles.toolbarBtn} onClick={() => navigate("/filters")}>
+        <Icon glyph="sliders" size={16} />
+        {t.filters}
+        {activeFilters > 0 && <span className={styles.filterDot} />}
+      </button>
+    </div>
+  );
+
+  const subsToolbar = subItems.length > 0 && (
+    <div className={styles.toolbar}>
+      <button type="button" className={styles.toolbarBtn} onClick={() => setAlertsEnabled(!alertEnabled)}>
+        {alertEnabled ? (
+          <Icon glyph="bell" size={16} color="var(--ts-accent)" filled />
+        ) : (
+          <Icon glyph="bellOff" size={16} color="var(--ts-hint)" />
+        )}
+        {t.notifBtn}
+      </button>
+      <button type="button" className={styles.toolbarBtn} onClick={() => navigate("/alerts")}>
+        <Icon glyph="sliders" size={16} />
+        {t.settingsBtn}
+      </button>
+    </div>
+  );
+
+  const errorBlock = (
+    <div className={styles.errorBlock}>
+      <Icon glyph="close" size={42} color="var(--ts-hint)" />
+      <div>
+        <div className={styles.errorText}>{t.loadError}</div>
+        {errorStatus !== null && <div className={styles.errorCode}>HTTP {errorStatus}</div>}
+      </div>
+      <button type="button" className={styles.retryBtn} onClick={onReload}>
+        {t.retry}
+      </button>
+    </div>
+  );
+
+  const loginBlock = (
+    <div className={styles.loginBlock}>
+      <Icon glyph="telegram" size={44} color="var(--ts-tg)" />
+      <div className={styles.loginTitle}>{t.loginTg}</div>
+      <div className={styles.loginDesc}>{t.loginHint}</div>
+      <div className={styles.loginButtonWrap}>
+        <TelegramLoginButton />
+      </div>
+    </div>
+  );
+
+  const listSkeleton = Math.min(Math.max(visible.list, LIST_SKELETON_MIN), PAGE_SIZE);
+
+  const pane = (key: Tab) => {
+    if (key === "subs") {
+      const rows = subItems.slice(0, visible.subs);
+      return (
+        <ProviderPane
+          toolbar={subsToolbar}
+          count={loggedIn && subItems.length > 0 ? t.showing(rows.length, subItems.length) : null}
+          loading={loggedIn && loading}
+          skeletonCount={Math.max(subscribed.length, SKELETON_MIN)}
+          rows={rows}
+          trailing={bellToggle}
+          fallback={
+            !loggedIn ? (
+              loginBlock
+            ) : (
+              <EmptyState
+                glyph="bell"
+                iconColor="var(--ts-star)"
+                title={t.subsEmptyTitle}
+                desc={t.subsEmptyDesc}
+              />
+            )
+          }
+          onOpen={openProvider}
+          onLoadMore={subItems.length > rows.length ? () => loadMore("subs") : undefined}
+        />
+      );
+    }
+
+    const items = key === "fav" ? favItems : listItems;
+    const rows = items.slice(0, visible[key]);
+    return (
+      <ProviderPane
+        hero={key === "list" ? hero : undefined}
+        toolbar={key === "list" ? listToolbar : undefined}
+        count={items.length > 0 ? t.showing(rows.length, items.length) : null}
+        loading={loading}
+        skeletonCount={key === "fav" ? Math.max(favorites.length, SKELETON_MIN) : listSkeleton}
+        rows={rows}
+        trailing={starToggle}
+        fallback={
+          isError ? (
+            errorBlock
+          ) : (
+            <EmptyState
+              glyph={key === "fav" ? "star" : "search"}
+              iconColor="var(--ts-star)"
+              title={key === "fav" ? t.favEmptyTitle : t.providersNotFound}
+              desc={key === "fav" ? t.favEmptyDesc : undefined}
+            />
+          )
+        }
+        onOpen={openProvider}
+        onLoadMore={items.length > rows.length ? () => loadMore(key) : undefined}
+      />
+    );
+  };
 
   return (
     <div className={styles.screen}>
-      <header className={styles.header}>
+      <nav className={styles.nav}>
         {!isInTelegram() && <div className={styles.headerTitle}>{t.appName}</div>}
-        <div className={styles.headerActions}>
-          <button type="button" aria-label="Refresh" className={styles.headerBtn} onClick={onReload}>
-            <span className={spinning ? styles.spin : undefined}>
-              <Icon glyph="reload" size={18} color="var(--ts-hint)" />
-            </span>
-          </button>
-          <button type="button" aria-label={t.settings} className={styles.headerBtn} onClick={() => setMenuOpen(true)}>
-            <Icon glyph="menu" size={20} color="var(--ts-hint)" />
-          </button>
-        </div>
-      </header>
-
-      <div className={styles.scroll} ref={scrollRef} onScroll={onScroll}>
-        <div className={styles.hero}>
-          <span className={styles.heroLogo}>
-            <TonLogo />
-          </span>
-          <div className={styles.heroTitle}>{t.mainTitle}</div>
-          <div className={styles.heroDesc}>{t.mainDesc}</div>
-        </div>
-
         <div className={styles.search}>
           <Icon glyph="search" size={16} color="var(--ts-hint)" />
           <input
@@ -173,161 +283,28 @@ export function Home() {
             </button>
           )}
         </div>
+        <div className={styles.navActions}>
+          <button type="button" aria-label="Refresh" className={styles.headerBtn} onClick={onReload}>
+            <span className={spinning ? styles.spin : undefined}>
+              <Icon glyph="reload" size={20} color="var(--ts-hint)" />
+            </span>
+          </button>
+          <button type="button" aria-label={t.settings} className={styles.headerBtn} onClick={() => setMenuOpen(true)}>
+            <Icon glyph="menu" size={22} color="var(--ts-hint)" />
+          </button>
+        </div>
+      </nav>
 
-        {showSubsToolbar && (
-          <div className={styles.toolbar}>
-            <button type="button" className={styles.toolbarBtn} onClick={() => setAlertsEnabled(!alertEnabled)}>
-              {alertEnabled ? (
-                <Icon glyph="bell" size={16} color="var(--ts-accent)" filled />
-              ) : (
-                <Icon glyph="bellOff" size={16} color="var(--ts-hint)" />
-              )}
-              {t.notifBtn}
-            </button>
-            <button type="button" className={styles.toolbarBtn} onClick={() => navigate("/alerts")}>
-              <Icon glyph="sliders" size={16} />
-              {t.settingsBtn}
-            </button>
-          </div>
-        )}
-
-        {showToolbar && (
-          <div className={styles.toolbar}>
-            <button type="button" className={styles.toolbarBtn} onClick={() => setSortField(sort.field)}>
-              <span className={cx(styles.sortChevron, sort.dir === "asc" && styles.sortChevronUp)}>
-                <Icon glyph="chevronDown" size={13} color="var(--ts-accent)" />
-              </span>
-              {t.sortField[sort.field]}
-            </button>
-            <button type="button" className={styles.toolbarBtn} onClick={() => navigate("/filters")}>
-              <Icon glyph="sliders" size={16} />
-              {t.filters}
-              {activeFilters > 0 && <span className={styles.filterDot} />}
-            </button>
-          </div>
-        )}
-
-        {showCount ? (
-          <div className={styles.count}>{homeCount}</div>
-        ) : showSkeleton ? (
-          <div className={styles.count}>{"\u00A0"}</div>
-        ) : null}
-
-        {showError && (
-          <div className={styles.errorBlock}>
-            <Icon glyph="close" size={42} color="var(--ts-hint)" />
-            <div>
-              <div className={styles.errorText}>{t.loadError}</div>
-              {errorStatus !== null && <div className={styles.errorCode}>HTTP {errorStatus}</div>}
-            </div>
-            <button type="button" className={styles.retryBtn} onClick={onReload}>
-              {t.retry}
-            </button>
-          </div>
-        )}
-
-        {showSubsRows && (
-          <div className={styles.list}>
-            {subProviders.map((provider) => (
-              <ProviderRow
-                key={provider.pubkey}
-                provider={provider}
-                onOpen={() => navigate(`/provider/${provider.pubkey}`)}
-                trailing={
-                  <RoundToggle
-                    glyph="bell"
-                    size={17}
-                    active={!alertsOff.includes(provider.pubkey)}
-                    ariaLabel={t.notifBtn}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      toggleBell(provider.pubkey);
-                    }}
-                  />
-                }
-              />
-            ))}
-          </div>
-        )}
-
-        {showSubsEmpty && (
-          <EmptyState
-            glyph="bell"
-            iconColor="var(--ts-star)"
-            title={t.subsEmptyTitle}
-            desc={t.subsEmptyDesc}
-          />
-        )}
-
-        {showSubsLogin && (
-          <div className={styles.loginBlock}>
-            <Icon glyph="telegram" size={44} color="var(--ts-tg)" />
-            <div className={styles.loginTitle}>{t.loginTg}</div>
-            <div className={styles.loginDesc}>{t.loginHint}</div>
-            <div className={styles.loginButtonWrap}>
-              <TelegramLoginButton />
-            </div>
-          </div>
-        )}
-
-        {showSkeleton && (
-          <div className={styles.list}>
-            {Array.from({ length: skeletonCount }, (_, index) => (
-              <div key={index} className={styles.skeleton}>
-                <div className={styles.skHead}>
-                  <span className={styles.skToggle} />
-                  <span className={styles.skKey} />
-                  <span className={styles.skSpacer} />
-                  <span className={styles.skStatus} />
-                </div>
-                <div className={styles.skCells}>
-                  {Array.from({ length: CELL_COUNT }, (_, cell) => (
-                    <span key={cell} className={styles.skCell}>
-                      <span className={styles.skLabel} />
-                      <span className={styles.skValue} />
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {showRows && (
-          <div className={styles.list}>
-            {shown.map((provider) => (
-              <ProviderRow
-                key={provider.pubkey}
-                provider={provider}
-                onOpen={() => navigate(`/provider/${provider.pubkey}`)}
-                trailing={
-                  <RoundToggle
-                    glyph="star"
-                    size={18}
-                    active={favorites.includes(provider.pubkey)}
-                    ariaLabel={t.fav}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      toggleFavorite(provider.pubkey);
-                    }}
-                  />
-                }
-              />
-            ))}
-          </div>
-        )}
-
-        {showEmpty && (
-          <EmptyState
-            glyph={favTab ? "star" : "search"}
-            iconColor="var(--ts-star)"
-            title={favTab ? t.favEmptyTitle : t.providersNotFound}
-            desc={favTab ? t.favEmptyDesc : undefined}
-          />
-        )}
-
-        {!showSkeleton && !isSubsTab && items.length > visible && <LoadMore onClick={loadMore} />}
-      </div>
+      <TabPager
+        tabs={TABS}
+        tab={tab}
+        panes={panes}
+        onTabChange={setTab}
+        onProgress={setProgress}
+        onPaneScroll={onPaneScroll}
+      >
+        {pane}
+      </TabPager>
 
       <button
         type="button"
@@ -340,7 +317,16 @@ export function Home() {
         <Icon glyph="arrowUp" size={22} color="#fff" />
       </button>
 
-      <BottomNav />
+      <FloatingTabs
+        tabs={[
+          { key: "list", label: t.list, glyph: "grid" },
+          { key: "subs", label: t.subs, glyph: "bell" },
+          { key: "fav", label: t.fav, glyph: "star" },
+        ]}
+        tab={tab}
+        progress={progress}
+        onSelect={setTab}
+      />
 
       {menuOpen && <MenuSheet onClose={() => setMenuOpen(false)} />}
     </div>

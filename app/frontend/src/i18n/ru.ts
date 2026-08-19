@@ -16,7 +16,7 @@ export const ru: Dict = {
   fav: "Избранное",
   filters: "Фильтры",
   sortBy: "Сортировка",
-  searchPlaceholder: "Поиск по публичному ключу",
+  searchPlaceholder: "Поиск по ключу",
   loadMore: "Показать ещё",
   providersNotFound: "Нет провайдеров по этим фильтрам",
   loadError: "Не удалось загрузить провайдеров",

@@ -28,17 +28,29 @@
   position: relative;
 }
 
-.header {
+.nav {
   position: relative;
   flex: none;
-  height: 50px;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  justify-content: center;
+  gap: 8px 10px;
+  padding: 10px 12px 12px;
   background: var(--ts-navbg);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
   border-bottom: var(--ts-hairline) solid var(--ts-sep);
+}
+
+.nav .headerTitle {
+  grid-column: 1 / -1;
+  text-align: center;
+}
+
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .headerTitle {
@@ -59,9 +71,9 @@
 .headerBtn {
   display: inline-flex;
   align-items: center;
-  height: 38px;
-  margin: 0 1px;
-  padding: 0 9px;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
   background: none;
   border: none;
   border-radius: 9px;
@@ -113,7 +125,6 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  margin-top: 18px;
   padding: 11px 12px;
   background: var(--ts-seg);
   border-radius: var(--ts-radius-field);
@@ -350,7 +361,7 @@
 .fab {
   position: absolute;
   right: 16px;
-  bottom: calc(94px + var(--ts-safe-bottom));
+  bottom: calc(78px + var(--ts-safe-bottom));
   width: 44px;
   height: 44px;
   display: flex;

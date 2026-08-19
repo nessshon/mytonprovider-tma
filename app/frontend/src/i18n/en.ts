@@ -13,7 +13,7 @@ export const en = {
   fav: "Favorites",
   filters: "Filters",
   sortBy: "Sort by",
-  searchPlaceholder: "Search by public key",
+  searchPlaceholder: "Search by key",
   loadMore: "Load more",
   providersNotFound: "No providers match these filters",
   loadError: "Couldn't load providers",

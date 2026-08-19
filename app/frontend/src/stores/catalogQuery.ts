@@ -30,18 +30,22 @@ const EMPTY_FILTERS: CatalogFilters = {
 
 export const PAGE_SIZE = 10;
 
+type Visible = Record<Tab, number>;
+
+const FIRST_PAGE: Visible = { list: PAGE_SIZE, subs: PAGE_SIZE, fav: PAGE_SIZE };
+
 interface CatalogQueryState {
   tab: Tab;
   search: string;
   sort: Sort;
   filters: CatalogFilters;
-  visible: number;
+  visible: Visible;
   setTab: (tab: Tab) => void;
   setSearch: (search: string) => void;
   setSortField: (field: SortField) => void;
   setFilters: (filters: CatalogFilters) => void;
   resetFilters: () => void;
-  loadMore: () => void;
+  loadMore: (tab: Tab) => void;
 }
 
 export const useCatalogQuery = create<CatalogQueryState>((set) => ({
@@ -49,9 +53,9 @@ export const useCatalogQuery = create<CatalogQueryState>((set) => ({
   search: "",
   sort: { field: "rating", dir: "desc" },
   filters: EMPTY_FILTERS,
-  visible: PAGE_SIZE,
-  setTab: (tab) => set({ tab, visible: PAGE_SIZE }),
-  setSearch: (search) => set({ search, visible: PAGE_SIZE }),
+  visible: FIRST_PAGE,
+  setTab: (tab) => set({ tab }),
+  setSearch: (search) => set({ search, visible: FIRST_PAGE }),
   setSortField: (field) =>
     set((state) => ({
       sort:
@@ -59,7 +63,7 @@ export const useCatalogQuery = create<CatalogQueryState>((set) => ({
           ? { field, dir: state.sort.dir === "asc" ? "desc" : "asc" }
           : { field, dir: "desc" },
     })),
-  setFilters: (filters) => set({ filters, visible: PAGE_SIZE }),
-  resetFilters: () => set({ filters: EMPTY_FILTERS, visible: PAGE_SIZE }),
-  loadMore: () => set((state) => ({ visible: state.visible + PAGE_SIZE })),
+  setFilters: (filters) => set({ filters, visible: FIRST_PAGE }),
+  resetFilters: () => set({ filters: EMPTY_FILTERS, visible: FIRST_PAGE }),
+  loadMore: (tab) => set((state) => ({ visible: { ...state.visible, [tab]: state.visible[tab] + PAGE_SIZE } })),
 }));
