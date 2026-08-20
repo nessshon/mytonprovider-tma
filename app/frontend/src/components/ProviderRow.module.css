@@ -25,20 +25,17 @@
   letter-spacing: 0.2px;
   color: var(--ts-value);
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.spacer {
-  flex: 1;
 }
 
 .status {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  flex: 0 1000 var(--ts-status-w);
-  min-width: min-content;
+  flex: 0 0 var(--ts-status-w);
+  min-width: 0;
+  margin-left: auto;
+  overflow: hidden;
   padding: 2px 7px;
   border-radius: var(--ts-radius-seg);
   font-size: 13.5px;
@@ -54,6 +51,16 @@
 .ratio {
   font-size: 12px;
   font-weight: 400;
+}
+
+@media (max-width: 339px) {
+  .status {
+    flex-basis: 116px;
+  }
+
+  .ratio {
+    display: none;
+  }
 }
 
 .cells {

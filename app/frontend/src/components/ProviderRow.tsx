@@ -4,10 +4,11 @@ import type { Provider } from "@/data/types";
 import { useT } from "@/i18n";
 import type { Dict } from "@/i18n/types";
 import { SC, rankColor, tint } from "@/lib/colors";
-import { EMPTY, amount, formatPrice, formatTime, freeSpaceTone, shorten, spaceFreePercent, trimDown } from "@/lib/format";
+import { EMPTY, KEY_CHARS, amount, fitKey, formatPrice, formatTime, freeSpaceTone, spaceFreePercent, trimDown } from "@/lib/format";
 import { describeStatus } from "@/lib/status";
 import { useCatalog } from "@/stores/catalog";
-import type { ReactNode } from "react";
+import { useKeyChars } from "@/hooks/useKeyChars";
+import { type ReactNode, useRef } from "react";
 import styles from "./ProviderRow.module.css";
 
 interface ProviderRowProps {
@@ -36,6 +37,9 @@ function freeSpace(provider: Provider, t: Dict): string {
 
 export function ProviderRow({ provider, onOpen, trailing }: ProviderRowProps) {
   const t = useT();
+  const headRef = useRef<HTMLDivElement>(null);
+  const pkRef = useRef<HTMLSpanElement>(null);
+  const keyChars = useKeyChars(headRef, pkRef, KEY_CHARS);
   const status = describeStatus(provider, t);
   const rank = useCatalog((s) => s.ranks[provider.pubkey]);
   const freePercent = provider.hasTelemetry
@@ -53,11 +57,12 @@ export function ProviderRow({ provider, onOpen, trailing }: ProviderRowProps) {
 
   return (
     <div className={styles.row} onClick={onOpen}>
-      <div className={styles.head}>
+      <div ref={headRef} className={styles.head}>
         {trailing}
-        <span className={styles.pk}>{shorten(provider.pubkey, 12).toUpperCase()}</span>
+        <span ref={pkRef} className={styles.pk}>
+          {fitKey(provider.pubkey, keyChars).toUpperCase()}
+        </span>
         <CopyButton value={provider.pubkey} />
-        <span className={styles.spacer} />
         <span
           className={styles.status}
           style={{

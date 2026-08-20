@@ -28,6 +28,8 @@ export function diskSpeedToNum(text: string | null): number | null {
   return parseFloat(match[1]) * (mult[match[2].toLowerCase()] ?? 1);
 }
 const ELLIPSIS = "…";
+export const KEY_HEAD = 6;
+export const KEY_CHARS = 13;
 
 export function trim(value: number, digits: number): string {
   return String(parseFloat(value.toFixed(digits)));
@@ -84,6 +86,13 @@ export function formatMbps(bytesPerSec: number | null): string {
 
 export function formatPing(ms: number | null): string {
   return ms && ms > 0 && ms < PING_MAX ? `${Math.round(ms)} ms` : EMPTY;
+}
+
+export function fitKey(value: string, chars: number): string {
+  if (value.length <= chars) return value;
+  const head = Math.min(KEY_HEAD, Math.max(1, chars - 1));
+  const tail = Math.max(0, chars - head - 1);
+  return `${value.slice(0, head)}${ELLIPSIS}${tail > 0 ? value.slice(value.length - tail) : ""}`;
 }
 
 export function shorten(value: string, max: number): string {
