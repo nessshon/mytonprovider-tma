@@ -55,6 +55,8 @@ export function FloatingTabs<T extends string>({ tabs, tab, progress, onSelect, 
     onScrub,
   );
 
+  const nearest = offset === null ? Math.round(thumb) : activeIndex;
+
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
     if (!step) return;
@@ -82,8 +84,9 @@ export function FloatingTabs<T extends string>({ tabs, tab, progress, onSelect, 
             transform: offset === null ? `translateX(${thumb * 100}%)` : `translateX(${offset}px)`,
           }}
         />
-        {tabs.map((item) => {
+        {tabs.map((item, index) => {
           const active = item.key === tab;
+          const lit = index === nearest;
           return (
             <button
               key={item.key}
@@ -93,10 +96,10 @@ export function FloatingTabs<T extends string>({ tabs, tab, progress, onSelect, 
               aria-controls={`pane-${item.key}`}
               aria-selected={active}
               tabIndex={active ? 0 : -1}
-              className={cx(styles.tab, active && styles.active)}
+              className={cx(styles.tab, lit && styles.active)}
               onClick={() => select(item.key)}
             >
-              {item.icon ? item.icon(active) : item.glyph && <Icon glyph={item.glyph} size={22} filled={active} />}
+              {item.icon ? item.icon(lit) : item.glyph && <Icon glyph={item.glyph} size={22} filled={lit} />}
               <span className={styles.label}>{item.label}</span>
             </button>
           );
