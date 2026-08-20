@@ -25,7 +25,7 @@ export function BagSheet({ bag, onClose }: BagSheetProps) {
 
   return (
     <BottomSheet onClose={onClose}>
-      {() => (
+      {(close) => (
         <>
           <div className={styles.head} style={{ color: SC[reasonTone(bag.reason)] }}>
             {reasonText(bag.reason, t)}
@@ -42,7 +42,14 @@ export function BagSheet({ bag, onClose }: BagSheetProps) {
             <FieldRow label={t.bagCheckedLabel} value={ago(nowSec - bag.reason_at, t)} divider />
             <FieldRow label={t.bagReason} value={bag.reason} divider />
           </Card>
-          <button className={styles.openBtn} type="button" onClick={() => navigate(`/bags?q=${bag.bag_id}`)}>
+          <button
+            className={styles.openBtn}
+            type="button"
+            onClick={() => {
+              close();
+              navigate(`/bags?q=${bag.bag_id}`);
+            }}
+          >
             {t.bagOpen}
           </button>
         </>
