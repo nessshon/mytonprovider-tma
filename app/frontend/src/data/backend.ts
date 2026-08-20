@@ -2,6 +2,7 @@ import { useAuth } from "@/stores/auth";
 import type { Explorer, Theme } from "@/stores/settings";
 
 const BACKEND_BASE = import.meta.env.VITE_BACKEND_BASE ?? "";
+const TIMEOUT_MS = 15000;
 
 export class BackendError extends Error {
   status: number;
@@ -18,6 +19,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = useAuth.getState().token;
   const response = await fetch(`${BACKEND_BASE}${path}`, {
     ...init,
+    signal: AbortSignal.timeout?.(TIMEOUT_MS),
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

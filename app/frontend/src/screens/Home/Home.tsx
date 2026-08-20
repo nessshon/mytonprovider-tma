@@ -12,6 +12,7 @@ import type { ReactNode } from "react";
 import { useT } from "@/i18n";
 import { cx } from "@/lib/cx";
 import { reducedMotion } from "@/lib/motion";
+import { notify } from "@/lib/telegram";
 import { isHydrated, onHydrated } from "@/lib/storage";
 import { useAlerts } from "@/stores/alerts";
 import { useAuth } from "@/stores/auth";
@@ -102,10 +103,14 @@ export function Home() {
     if (spinning) return;
     setSpinning(true);
     const startedAt = performance.now();
-    void reload().finally(() => {
-      const rest = Math.max(0, RELOAD_SPIN_MS - (performance.now() - startedAt));
-      reloadTimer.current = setTimeout(() => setSpinning(false), rest);
-    });
+    void reload()
+      .then((ok) => {
+        if (!ok) notify("error");
+      })
+      .finally(() => {
+        const rest = Math.max(0, RELOAD_SPIN_MS - (performance.now() - startedAt));
+        reloadTimer.current = setTimeout(() => setSpinning(false), rest);
+      });
     if (useAuth.getState().token) {
       hydrateFromServer().catch((error: unknown) => console.error("reload sync failed", error));
     }

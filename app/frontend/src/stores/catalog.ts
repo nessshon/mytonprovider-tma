@@ -16,11 +16,11 @@ interface CatalogState {
   errorStatus: number | null;
   loadedAt: number;
   load: () => Promise<void>;
-  reload: () => Promise<void>;
+  reload: () => Promise<boolean>;
 }
 
 export const useCatalog = create<CatalogState>((set, get) => {
-  const fetchAll = async (silent: boolean) => {
+  const fetchAll = async (silent: boolean): Promise<boolean> => {
     if (!silent) set({ status: "loading" });
     try {
       const providers = await fetchCatalog();
@@ -32,9 +32,14 @@ export const useCatalog = create<CatalogState>((set, get) => {
         errorStatus: null,
         loadedAt: Date.now(),
       });
+      return true;
     } catch (error) {
       console.error("Catalog load failed", error);
-      if (!silent) set({ status: "error", errorStatus: error instanceof HttpError ? error.status : null });
+      if (!silent) {
+        if (get().providers.length > 0) set({ status: "ready" });
+        else set({ status: "error", errorStatus: error instanceof HttpError ? error.status : null });
+      }
+      return false;
     }
   };
 
