@@ -1,10 +1,11 @@
 import { cx } from "@/lib/cx";
 import { reducedMotion } from "@/lib/motion";
-import { createContext, type ReactNode, useContext, useEffect, useRef } from "react";
+import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import styles from "./Sheet.module.css";
 import type { SheetHeight } from "./presentation";
 import { useSheetDrag } from "./useSheetDrag";
 
+const OPEN_MS = 420;
 const CLOSE_MS = 260;
 const CLOSE_EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
 
@@ -36,6 +37,13 @@ export function Sheet({ height, depth, top, closing, title, subtitle, onDismiss,
     const layer = layerRef.current;
     if (layer) layer.inert = !top;
   }, [top]);
+
+  const [entering, setEntering] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setEntering(false), OPEN_MS);
+    return () => clearTimeout(timer);
+  }, []);
 
   const opener = useRef<Element | null>(null);
   opener.current ??= document.activeElement;
@@ -95,6 +103,7 @@ export function Sheet({ height, depth, top, closing, title, subtitle, onDismiss,
         className={cx(
           styles.sheet,
           styles[height],
+          entering && !closing && styles.entering,
           dragging && styles.dragging,
           closing ? styles.closing : !top && styles.behind,
         )}

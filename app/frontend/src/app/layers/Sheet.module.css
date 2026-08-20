@@ -42,7 +42,6 @@
   background: var(--ts-bg);
   border-radius: 18px 18px 0 0;
   box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.28);
-  animation: ts-sheet-up var(--ts-sheet-ms) var(--ts-sheet-ease);
   transition: transform var(--ts-sheet-out-ms) var(--ts-sheet-ease);
   pointer-events: auto;
   will-change: transform;
@@ -57,18 +56,17 @@
   padding-bottom: var(--ts-safe-bottom);
 }
 
+.entering {
+  animation: ts-sheet-up var(--ts-sheet-ms) var(--ts-sheet-ease);
+}
+
 .dragging {
-  animation: none;
   transition: none;
 }
 
 .behind {
   transform: scale(0.96) translateY(-8px);
   transition-duration: var(--ts-sheet-ms);
-}
-
-.closing {
-  animation: none;
 }
 
 .grabber {
