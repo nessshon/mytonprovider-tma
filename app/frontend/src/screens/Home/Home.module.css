@@ -177,7 +177,7 @@
 .fab {
   position: absolute;
   right: 16px;
-  bottom: calc(78px + var(--ts-safe-bottom));
+  bottom: calc(86px + var(--ts-safe-bottom));
   width: 44px;
   height: 44px;
   display: flex;

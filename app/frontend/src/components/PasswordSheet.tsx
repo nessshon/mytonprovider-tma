@@ -118,6 +118,7 @@ export function PasswordSheet({ pubkey, onClose }: PasswordSheetProps) {
           <Field
             className={cx(styles.field, shaking && styles.fieldShake)}
             glyph="lock"
+            invalid={error !== "none"}
             password={!show}
             value={value}
             onChange={(next) => {

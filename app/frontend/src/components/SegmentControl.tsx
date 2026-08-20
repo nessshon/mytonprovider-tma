@@ -46,7 +46,6 @@ export function SegmentControl<T>({
       className={styles.box}
       style={{ height }}
       role="radiogroup"
-      data-no-drag
       {...handlers}
     >
       <span
