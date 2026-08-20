@@ -25,7 +25,7 @@ const MARKS = (
   </>
 );
 
-export function TonLogo({ size = 44, disc = "var(--ts-accent)", mark = "#f9f9f9", mono, filled }: TonLogoProps) {
+export function TonLogo({ size = 38, disc = "var(--ts-accent)", mark = "#f9f9f9", mono, filled }: TonLogoProps) {
   const id = useId();
 
   if (mono && !filled) {

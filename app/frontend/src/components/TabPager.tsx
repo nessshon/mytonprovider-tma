@@ -87,8 +87,6 @@ export function TabPager<T extends string>({
     track.scrollLeft = position * track.clientWidth;
   };
 
-  if (scrubRef) scrubRef.current = scrub;
-
   const settle = () => {
     const track = trackRef.current;
     if (!track || !track.clientWidth) return;
@@ -100,6 +98,7 @@ export function TabPager<T extends string>({
   };
 
   settleRef.current = settle;
+  if (scrubRef) scrubRef.current = scrub;
 
   const onScroll = (event: UIEvent<HTMLDivElement>) => {
     const track = event.currentTarget;

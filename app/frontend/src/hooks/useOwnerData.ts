@@ -8,7 +8,7 @@ import {
 } from "@/data/backend";
 import { OWNER_PERIOD_API, type OwnerChartRange, type OwnerPeriod } from "@/data/owner";
 import { useAuth } from "@/stores/auth";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
 
 const CACHE_TTL_MS = 60_000;
@@ -119,6 +119,7 @@ export function useOwnerData(
   const [denied, setDenied] = useState(false);
   const [failed, setFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const params = useRef("");
 
   useEffect(() => {
     if (!enabled || !token) {
@@ -128,7 +129,11 @@ export function useOwnerData(
       setRefreshing(false);
       return;
     }
-    setRefreshing(true);
+    const key = `${pubkey}:${period}:${chartRange}`;
+    if (params.current !== key) {
+      params.current = key;
+      setRefreshing(true);
+    }
     let alive = true;
     composedOwner(pubkey, period, chartRange)
       .then((data) => {

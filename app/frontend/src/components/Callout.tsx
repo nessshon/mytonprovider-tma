@@ -16,7 +16,7 @@ interface CalloutProps {
 
 export function Callout({ hero, glyph, icon, iconColor = "var(--ts-accent)", title, desc, children }: CalloutProps) {
   const disc = hero && !icon;
-  const mark = icon ?? (glyph ? <Icon glyph={glyph} size={disc ? 22 : 42} color={disc ? "#fff" : iconColor} filled={disc} /> : null);
+  const mark = icon ?? (glyph ? <Icon glyph={glyph} size={disc ? 19 : 42} color={disc ? "#fff" : iconColor} filled={disc} /> : null);
 
   return (
     <div className={cx(styles.root, hero && styles.hero)}>

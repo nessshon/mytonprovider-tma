@@ -15,8 +15,8 @@ interface SegmentDrag {
   handlers: {
     onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void;
     onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => void;
-    onPointerUp: () => void;
-    onPointerCancel: () => void;
+    onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void;
+    onPointerCancel: (event: ReactPointerEvent<HTMLDivElement>) => void;
     onLostPointerCapture: (event: ReactPointerEvent<HTMLDivElement>) => void;
   };
 }
@@ -53,9 +53,11 @@ export function useSegmentDrag(
     onIndex(index);
   };
 
-  const stop = () => {
-    if (!held.current) return;
+  const stop = (pointerId?: number) => {
+    const drag = held.current;
+    if (!drag || (pointerId !== undefined && pointerId !== drag.pointerId)) return;
     held.current = null;
+    if (!drag.active) return;
     setOffset(null);
     onScrub?.(null);
   };
@@ -86,10 +88,10 @@ export function useSegmentDrag(
         }
         apply(event.clientX);
       },
-      onPointerUp: stop,
-      onPointerCancel: stop,
+      onPointerUp: (event) => stop(event.pointerId),
+      onPointerCancel: (event) => stop(event.pointerId),
       onLostPointerCapture: (event) => {
-        if (event.target === boxRef.current) stop();
+        if (event.target === boxRef.current) stop(event.pointerId);
       },
     },
   };

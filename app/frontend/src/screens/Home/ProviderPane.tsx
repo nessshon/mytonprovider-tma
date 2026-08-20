@@ -70,7 +70,7 @@ export function ProviderPane({
           ))}
         </div>
       ) : (
-        fallback
+        <div className={styles.fallback}>{fallback}</div>
       )}
 
       {!loading && onLoadMore && <LoadMore onClick={onLoadMore} />}

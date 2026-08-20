@@ -5,6 +5,11 @@
   text-align: center;
 }
 
+.countWide {
+  composes: count;
+  margin-top: 22px;
+}
+
 .countBar {
   composes: pulse from "./anim.module.css";
   display: inline-block;

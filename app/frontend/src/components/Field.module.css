@@ -14,7 +14,7 @@
   box-shadow: inset 0 0 0 1.5px var(--ts-accent);
 }
 
-.invalid {
+.field.invalid {
   box-shadow: inset 0 0 0 1.5px var(--ts-danger);
 }
 

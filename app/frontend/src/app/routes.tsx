@@ -7,7 +7,7 @@ import { Home } from "@/screens/Home/Home";
 import { ProviderBags } from "@/screens/ProviderBags/ProviderBags";
 import { ProviderDetail } from "@/screens/ProviderDetail/ProviderDetail";
 import { Trusted } from "@/screens/Trusted/Trusted";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Navigate, Route, useLocation, useNavigate, useParams } from "react-router-dom";
 import { hasDialogs } from "./layers/context";
 import { LayerStack } from "./layers/LayerStack";
@@ -25,14 +25,16 @@ function ProviderDetailRoute() {
 export function AppRoutes() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const route = useRef(pathname);
+  route.current = pathname;
 
   useEffect(
     () =>
       bindSettingsButton(() => {
-        if (hasDialogs() || pathname === "/menu") return;
+        if (hasDialogs() || route.current === "/menu") return;
         navigate("/menu");
       }),
-    [navigate, pathname],
+    [navigate],
   );
 
   useEffect(() => {

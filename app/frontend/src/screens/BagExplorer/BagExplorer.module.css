@@ -23,8 +23,7 @@
 }
 
 .count {
-  composes: count from "../../styles/list.module.css";
-  margin-top: 22px;
+  composes: countWide from "../../styles/list.module.css";
 }
 
 .countBar {

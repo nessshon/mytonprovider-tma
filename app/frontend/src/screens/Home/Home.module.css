@@ -215,3 +215,14 @@
   transform: none;
   pointer-events: auto;
 }
+
+.calloutBtn {
+  composes: button from "../../components/Callout.module.css";
+}
+
+.fallback {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+}

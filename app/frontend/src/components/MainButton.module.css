@@ -39,8 +39,7 @@
 }
 
 .spinner {
-  composes: spin from "../styles/anim.module.css";
-  animation-duration: 0.7s;
+  composes: spinFast from "../styles/anim.module.css";
   width: 18px;
   height: 18px;
   border-radius: 50%;

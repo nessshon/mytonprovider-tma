@@ -109,7 +109,9 @@
 }
 
 .auto > .body {
-  flex: none;
+  display: block;
+  flex: 0 1 auto;
+  min-height: 0;
   padding: 4px 16px 14px;
   overflow-y: auto;
   overscroll-behavior: contain;

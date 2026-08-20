@@ -8,6 +8,7 @@ import { TelegramLoginButton } from "@/components/TelegramLoginButton";
 import { countActiveFilters, selectCatalog } from "@/data/query";
 import { hydrateFromServer, setAlertsEnabled, toggleBell, toggleFavorite } from "@/data/sync";
 import type { Provider } from "@/data/types";
+import type { ReactNode } from "react";
 import { useT } from "@/i18n";
 import { cx } from "@/lib/cx";
 import { isHydrated, onHydrated } from "@/lib/storage";
@@ -47,6 +48,7 @@ export function Home() {
   const setSearch = useCatalogQuery((s) => s.setSearch);
   const setSortField = useCatalogQuery((s) => s.setSortField);
   const loadMore = useCatalogQuery((s) => s.loadMore);
+  const resetFilters = useCatalogQuery((s) => s.resetFilters);
 
   const favorites = useFavorites((s) => s.favorites);
   const loggedIn = useAuth((s) => s.loggedIn);
@@ -144,11 +146,11 @@ export function Home() {
     />
   );
 
-  const listHero = <Callout hero icon={<TonLogo />} title={t.mainTitle} />;
+  const listHero = <Callout hero icon={<TonLogo />} title={t.mainTitle} desc={t.mainDesc} />;
 
-  const subsHero = <Callout hero glyph="bell" title={t.subsTitle} />;
+  const subsHero = <Callout hero glyph="bell" title={t.subsTitle} desc={t.subsDesc} />;
 
-  const favHero = <Callout hero glyph="star" title={t.favTitle} />;
+  const favHero = <Callout hero glyph="star" title={t.favTitle} desc={t.favDesc} />;
 
   const sortToolbar = (
     <div className={styles.toolbar}>
@@ -189,38 +191,36 @@ export function Home() {
 
   const query = search.trim();
 
-  const searchBlock = (
-    <Callout desc={t.searchEmpty}>
-      {listItems.length > 0 && (
-        <button type="button" className={styles.retryBtn} onClick={() => setTab("list")}>
-          {t.searchInCatalog(listItems.length)}
-        </button>
-      )}
+  const marks = {
+    subs: { glyph: "bell" as const, title: t.subsTitle },
+    list: { icon: <TonLogo />, title: t.mainTitle },
+    fav: { glyph: "star" as const, title: t.favTitle },
+  };
+
+  const actionButton = (label: string, onClick: () => void) => (
+    <button type="button" className={styles.calloutBtn} onClick={onClick}>
+      {label}
+    </button>
+  );
+
+  const state = (key: Tab, desc: ReactNode, action?: ReactNode) => (
+    <Callout hero {...marks[key]} desc={desc}>
+      {action}
     </Callout>
   );
 
-  const errorBlock = (
-    <Callout desc={errorStatus !== null ? `${t.loadError} (HTTP ${errorStatus})` : t.loadError}>
-      <button type="button" className={styles.retryBtn} onClick={onReload}>
-        {t.retry}
-      </button>
-    </Callout>
-  );
+  const errorState = (key: Tab) =>
+    state(key, errorStatus !== null ? `${t.loadError} (HTTP ${errorStatus})` : t.loadError, actionButton(t.retry, onReload));
 
-  const loginBlock = (
-    <Callout desc={t.loginNeeded}>
-      <div className={styles.loginButtonWrap}>
-        <TelegramLoginButton />
-      </div>
-    </Callout>
-  );
+  const searchState = (key: Tab) =>
+    state(key, t.searchEmpty, listItems.length > 0 ? actionButton(t.searchInCatalog(listItems.length), () => setTab("list")) : undefined);
 
   const pane = (key: Tab) => {
     if (key === "subs") {
       const rows = subItems.slice(0, visible.subs);
       return (
         <ProviderPane
-          hero={subsHero}
+          hero={subItems.length > 0 || subsLoading ? subsHero : undefined}
           toolbar={subsToolbar}
           count={loggedIn && subItems.length > 0 ? t.showing(rows.length, subItems.length) : null}
           loading={subsLoading}
@@ -229,13 +229,13 @@ export function Home() {
           trailing={bellToggle}
           fallback={
             !loggedIn ? (
-              loginBlock
+              state("subs", t.loginNeeded, <TelegramLoginButton />)
             ) : isError ? (
-              errorBlock
+              errorState("subs")
             ) : query ? (
-              searchBlock
+              searchState("subs")
             ) : (
-              <Callout desc={t.subsEmpty} />
+              state("subs", t.subsEmpty, actionButton(t.findProviders, () => setTab("list")))
             )
           }
           onOpen={openProvider}
@@ -248,7 +248,7 @@ export function Home() {
     const rows = items.slice(0, visible[key]);
     return (
       <ProviderPane
-        hero={key === "fav" ? favHero : listHero}
+        hero={items.length > 0 || (key === "fav" ? favLoading : loading) ? (key === "fav" ? favHero : listHero) : undefined}
         toolbar={key === "fav" ? favToolbar : listToolbar}
         count={items.length > 0 ? t.showing(rows.length, items.length) : null}
         loading={key === "fav" ? favLoading : loading}
@@ -257,11 +257,13 @@ export function Home() {
         trailing={starToggle}
         fallback={
           isError ? (
-            errorBlock
-          ) : key === "fav" && query ? (
-            searchBlock
+            errorState(key)
+          ) : query ? (
+            searchState(key)
+          ) : key === "fav" ? (
+            state("fav", t.favEmpty, actionButton(t.findProviders, () => setTab("list")))
           ) : (
-            <Callout desc={key === "fav" ? t.favEmpty : t.providersNotFound} />
+            state("list", t.providersNotFound, activeFilters > 0 ? actionButton(t.reset, resetFilters) : undefined)
           )
         }
         onOpen={openProvider}
