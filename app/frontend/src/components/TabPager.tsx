@@ -73,10 +73,10 @@ export function TabPager<T extends string>({
   }, []);
 
   const scrub = (position: number | null) => {
+    if (position === null) scrubbing.current = false;
     const track = trackRef.current;
     if (!track || !track.clientWidth) return;
     if (position === null) {
-      scrubbing.current = false;
       track.style.scrollSnapType = "";
       const index = Math.round(track.scrollLeft / track.clientWidth);
       track.scrollTo({ left: index * track.clientWidth, behavior: reducedMotion() ? "auto" : "smooth" });

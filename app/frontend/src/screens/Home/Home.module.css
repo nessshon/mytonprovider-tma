@@ -102,11 +102,6 @@
   composes: list from "../../styles/list.module.css";
 }
 
-.loginButtonWrap {
-  width: 100%;
-  max-width: 260px;
-}
-
 .skeleton {
   composes: pulse from "../../styles/anim.module.css";
   padding: 12px 12px 14px;
@@ -176,17 +171,6 @@
   width: 80%;
   height: 17px;
   margin-top: 2px;
-}
-
-.retryBtn {
-  padding: 2px 4px;
-  border: none;
-  background: none;
-  color: var(--ts-accent);
-  font-size: 14.5px;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
 }
 
 

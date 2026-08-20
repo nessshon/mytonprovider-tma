@@ -11,6 +11,7 @@ import type { Provider } from "@/data/types";
 import type { ReactNode } from "react";
 import { useT } from "@/i18n";
 import { cx } from "@/lib/cx";
+import { reducedMotion } from "@/lib/motion";
 import { isHydrated, onHydrated } from "@/lib/storage";
 import { useAlerts } from "@/stores/alerts";
 import { useAuth } from "@/stores/auth";
@@ -26,6 +27,7 @@ import { TonLogo } from "./TonLogo";
 
 const RELOAD_SPIN_MS = 1100;
 const SCROLL_TOP_THRESHOLD = 360;
+const PENDING_ROWS = 4;
 const TABS = ["subs", "list", "fav"] as const;
 
 export function Home() {
@@ -92,8 +94,8 @@ export function Home() {
   const activeFilters = countActiveFilters(filters);
   const initialLoading = status !== "ready" && status !== "error";
   const loading = spinning || initialLoading;
-  const subsLoading = loggedIn && loading && (!hydrated || subscribed.length > 0);
-  const favLoading = loading && (!hydrated || favorites.length > 0);
+  const subsLoading = !hydrated || (loggedIn && loading && subscribed.length > 0);
+  const favLoading = !hydrated || (loading && favorites.length > 0);
   const isError = status === "error" && providers.length === 0;
 
   const onReload = () => {
@@ -114,7 +116,7 @@ export function Home() {
   };
 
   const scrollToTop = () => {
-    panes.current[tab]?.scrollTo({ top: 0, behavior: "smooth" });
+    panes.current[tab]?.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" });
     setShowTop(false);
   };
 
@@ -168,9 +170,9 @@ export function Home() {
     </div>
   );
 
-  const listToolbar = (providers.length > 0 || loading) && sortToolbar;
+  const listToolbar = (listItems.length > 0 || loading) && sortToolbar;
 
-  const favToolbar = (favorites.length > 0 || favLoading) && sortToolbar;
+  const favToolbar = (favItems.length > 0 || favLoading) && sortToolbar;
 
   const subsToolbar = (subItems.length > 0 || subsLoading) && (
     <div className={styles.toolbar}>
@@ -224,7 +226,7 @@ export function Home() {
           toolbar={subsToolbar}
           count={loggedIn && subItems.length > 0 ? t.showing(rows.length, subItems.length) : null}
           loading={subsLoading}
-          skeletonCount={rows.length || Math.min(subscribed.length, PAGE_SIZE)}
+          skeletonCount={rows.length || (hydrated ? Math.min(subscribed.length, PAGE_SIZE) : PENDING_ROWS)}
           rows={rows}
           trailing={bellToggle}
           fallback={
@@ -252,7 +254,9 @@ export function Home() {
         toolbar={key === "fav" ? favToolbar : listToolbar}
         count={items.length > 0 ? t.showing(rows.length, items.length) : null}
         loading={key === "fav" ? favLoading : loading}
-        skeletonCount={rows.length || (key === "fav" ? Math.min(favorites.length, PAGE_SIZE) : PAGE_SIZE)}
+        skeletonCount={
+          rows.length || (key === "fav" ? (hydrated ? Math.min(favorites.length, PAGE_SIZE) : PENDING_ROWS) : PAGE_SIZE)
+        }
         rows={rows}
         trailing={starToggle}
         fallback={
@@ -260,10 +264,10 @@ export function Home() {
             errorState(key)
           ) : query ? (
             searchState(key)
-          ) : key === "fav" ? (
+          ) : key === "fav" && favorites.length === 0 ? (
             state("fav", t.favEmpty, actionButton(t.findProviders, () => setTab("list")))
           ) : (
-            state("list", t.providersNotFound, activeFilters > 0 ? actionButton(t.reset, resetFilters) : undefined)
+            state(key, t.providersNotFound, activeFilters > 0 ? actionButton(t.reset, resetFilters) : undefined)
           )
         }
         onOpen={openProvider}

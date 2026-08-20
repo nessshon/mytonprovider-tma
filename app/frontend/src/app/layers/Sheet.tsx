@@ -103,9 +103,9 @@ export function Sheet({ height, depth, top, closing, title, subtitle, onDismiss,
         className={cx(
           styles.sheet,
           styles[height],
-          entering && !closing && styles.entering,
+          entering && styles.entering,
           dragging && styles.dragging,
-          closing ? styles.closing : !top && styles.behind,
+          !closing && !top && styles.behind,
         )}
         style={offset > 0 ? { transform: `translateY(${offset}px)` } : undefined}
         {...handlers}
