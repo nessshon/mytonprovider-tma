@@ -89,8 +89,8 @@ export function TabPager<T extends string>({
 
   const settle = () => {
     const track = trackRef.current;
-    if (!track || !track.clientWidth) return;
-    if (!scrubbing.current) track.style.scrollSnapType = "";
+    if (!track || !track.clientWidth || scrubbing.current) return;
+    track.style.scrollSnapType = "";
     dragging.current = false;
     const index = Math.min(Math.max(Math.round(track.scrollLeft / track.clientWidth), 0), tabs.length - 1);
     const target = index * track.clientWidth;
