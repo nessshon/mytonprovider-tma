@@ -81,32 +81,6 @@ async function composedOwner(
   return { ...provider, summary: stats.summary, chart: chart.points };
 }
 
-export function useProblemBags(pubkey: string, enabled: boolean): number | null {
-  const token = useAuth((s) => s.token);
-  const tick = useOwnerRevalidation((s) => s.tick);
-  const [count, setCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!enabled || !token) {
-      setCount(null);
-      return;
-    }
-    let alive = true;
-    fetchProvider(pubkey)
-      .then((provider) => {
-        if (alive) setCount(provider.problem_bags);
-      })
-      .catch(() => {
-        if (alive) setCount(null);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [pubkey, enabled, token, tick]);
-
-  return count;
-}
-
 export function useOwnerData(
   pubkey: string,
   enabled: boolean,

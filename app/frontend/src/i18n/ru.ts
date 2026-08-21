@@ -72,7 +72,6 @@ export const ru: Dict = {
   bagsFailed: "Часть бэгов не прошла проверку",
   bagsFailedTitle: "Проблемные бэги",
   bagsFailedEmpty: "Проблемных бэгов нет",
-  bagsAttention: "Требуют внимания",
   bagChecked: (ago: string) => `проверено ${ago} назад`,
   bagCheckedNow: "проверено только что",
   bagId: "Bag ID",

@@ -69,7 +69,6 @@ export const en = {
   bagsFailed: "Some bags failed the check",
   bagsFailedTitle: "Bags with issues",
   bagsFailedEmpty: "No problem bags",
-  bagsAttention: "Needs attention",
   bagChecked: (ago: string) => `checked ${ago} ago`,
   bagCheckedNow: "checked just now",
   bagId: "Bag ID",

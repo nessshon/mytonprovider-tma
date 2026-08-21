@@ -16,11 +16,10 @@ import { StatusDot } from "@/components/StatusDot";
 import { unsubscribeProvider } from "@/data/sync";
 import type { Provider } from "@/data/types";
 import { useLogin } from "@/hooks/useLogin";
-import { useProblemBags } from "@/hooks/useOwnerData";
 import { useT } from "@/i18n";
 import type { Dict } from "@/i18n/types";
 import { toUserFriendly } from "@/lib/address";
-import { ACCENT, SC, rankColor, tint } from "@/lib/colors";
+import { SC, rankColor, tint } from "@/lib/colors";
 import { cx } from "@/lib/cx";
 import { EMPTY, GB, ago, amount, formatMbps, formatPing, formatPrice, formatPriceGram, formatSpace, formatTime, shorten, uptimeTone } from "@/lib/format";
 import { describeStatus } from "@/lib/status";
@@ -100,7 +99,6 @@ export function ProviderDetail() {
   const loggedIn = useAuth((s) => s.loggedIn);
   const { start: startLogin } = useLogin();
   const isSubscribed = useSubscriptions((s) => s.subscribed.includes(pubkey));
-  const problemBags = useProblemBags(pubkey, isSubscribed);
 
   const [pwOpen, setPwOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -124,7 +122,6 @@ export function ProviderDetail() {
 
   const st = describeStatus(provider, t);
   const hasTelemetry = provider.hasTelemetry;
-  const showBand = isSubscribed && problemBags !== null && problemBags > 0;
 
   const subscribeLabel = isSubscribed ? t.unsubscribe : loggedIn ? t.subscribe : t.loginTg;
   const onSubscribe = () => {
@@ -217,25 +214,11 @@ export function ProviderDetail() {
               )}
             </div>
           </div>
-          {showBand ? (
-            <div
-              className={cx(styles.statusFooter, styles.statusFooterAction)}
-              style={{ background: tint(ACCENT, 0.08) }}
-              onClick={() => navigate(`/provider/${pubkey}/bags`)}
-            >
-              <span className={styles.ctaLabel}>{t.bagsAttention}</span>
-              <span className={styles.ctaBadge} style={{ background: tint(ACCENT, 0.16), color: ACCENT }}>
-                {problemBags}
-              </span>
-              <span className={styles.cardChev}>
-                <Icon glyph="chevronDown" size={16} color={ACCENT} stroke={2.6} />
-              </span>
-            </div>
-          ) : st.desc ? (
+          {st.desc && (
             <div className={styles.statusFooter}>
               <span className={styles.statusDesc}>{st.desc}</span>
             </div>
-          ) : null}
+          )}
         </div>
 
         <div className={styles.tiles}>

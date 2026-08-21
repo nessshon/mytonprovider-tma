@@ -9,6 +9,7 @@ import { prefetchOwner, useOwnerData } from "@/hooks/useOwnerData";
 import { useT } from "@/i18n";
 import type { Dict, DictStringKey } from "@/i18n/types";
 import { explorerAddressUrl } from "@/lib/address";
+import { SC, tint } from "@/lib/colors";
 import { cx } from "@/lib/cx";
 import { JUST_NOW_SEC, formatTime } from "@/lib/format";
 import { Icon } from "@/components/Icon/Icon";
@@ -16,6 +17,7 @@ import { useAlerts } from "@/stores/alerts";
 import { useAuth } from "@/stores/auth";
 import { useSettings } from "@/stores/settings";
 import { type ReactNode, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FieldCard } from "./FieldCard";
 import styles from "./ProviderDetail.module.css";
 
@@ -34,6 +36,7 @@ function balanceAge(secs: number, t: Dict): string {
 
 export function OwnerPanel({ provider, pubkey, children }: { provider: Provider; pubkey: string; children: ReactNode }) {
   const t = useT();
+  const navigate = useNavigate();
   const loggedIn = useAuth((s) => s.loggedIn);
   const thresholds = useAlerts((s) => s.thresholds);
 
@@ -54,6 +57,7 @@ export function OwnerPanel({ provider, pubkey, children }: { provider: Provider;
   const explorer = useSettings((state) => state.explorer);
   const walletUrl = explorerAddressUrl(provider.address, explorer);
   const loading = loggedIn && !payload && !denied && !failed;
+  const problemBags = payload?.problem_bags ?? 0;
 
   return (
     <>
@@ -102,6 +106,17 @@ export function OwnerPanel({ provider, pubkey, children }: { provider: Provider;
               </span>
             </div>
           </div>
+          <button type="button" className={styles.bagsBtn} onClick={() => navigate(`/provider/${pubkey}/bags`)}>
+            {t.bagsFailedTitle}
+            <span className={styles.bagsTail}>
+              {problemBags > 0 && (
+                <span className={styles.bagsBadge} style={{ background: tint(SC.red, 0.16), color: SC.red }}>
+                  {problemBags}
+                </span>
+              )}
+              <Icon glyph="chevron" size={16} color="var(--ts-hint)" />
+            </span>
+          </button>
           <div className={styles.ownerSegWrap}>
             <SegmentControl<OwnerTab>
               options={[
@@ -129,6 +144,9 @@ export function OwnerPanel({ provider, pubkey, children }: { provider: Provider;
               <div className={styles.skelStorageValue} />
             </div>
             <div className={styles.skelStorageBar} />
+          </div>
+          <div className={styles.bagsBtn}>
+            <div className={styles.skelBagsLabel} />
           </div>
           <div className={styles.ownerSegWrap}>
             <div className={styles.skelSeg} />

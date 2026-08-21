@@ -28,37 +28,42 @@
   border-top: var(--ts-hairline) solid var(--ts-sep);
 }
 
-.statusFooterAction {
+.bagsBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 13px 16px;
+  border: none;
+  border-radius: var(--ts-radius-card);
+  background: var(--ts-card);
+  color: var(--ts-text);
+  font-family: inherit;
+  font-size: 15px;
+  text-align: left;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.15s ease;
 }
 
-.statusFooterAction:active {
-  transform: scale(0.99);
+.bagsBtn:active {
+  opacity: 0.6;
 }
 
-.ctaLabel {
-  flex: 1;
-  min-width: 0;
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--ts-hint);
-}
-
-.ctaBadge {
+.bagsTail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
   flex: none;
-  padding: 2px 8px;
+}
+
+.bagsBadge {
+  padding: 1px 7px;
   border-radius: 7px;
   font-size: 12.5px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-
-.cardChev {
-  flex: none;
-  display: flex;
-  transform: rotate(-90deg);
 }
 
 .health {
@@ -388,6 +393,12 @@
   width: 100%;
   height: 36px;
   border-radius: 10px;
+}
+
+.skelBagsLabel {
+  composes: skel;
+  width: 120px;
+  height: 16px;
 }
 
 @keyframes ts-banner-in {
