@@ -42,15 +42,19 @@ next to it, and start again.
 
 `GET /health` reports one of three states, public and not rate-limited:
 
-| Response                                        | Code  | Meaning                                        |
-|-------------------------------------------------|-------|------------------------------------------------|
-| `{"status": "ok", "stale": []}`                  | `200` | serving, every worker on schedule              |
-| `{"status": "degraded", "stale": ["…Worker"]}`   | `200` | serving, the listed workers are behind         |
-| `{"status": "down", "stale": []}`                | `503` | the database does not answer                   |
+| Response                                       | Code  | Meaning                                |
+|------------------------------------------------|-------|----------------------------------------|
+| `{"status": "ok", "stale": []}`                | `200` | serving, every worker on schedule      |
+| `{"status": "degraded", "stale": ["…Worker"]}` | `200` | serving, the listed workers are behind |
+| `{"status": "down", "stale": []}`              | `503` | the database does not answer           |
 
-`503` means the app cannot serve, so restarting it is the right response; a worker falling behind is not that
-and stays `200`. Point uptime monitors at the status code and, for the degraded case, at the `"status": "ok"`
-keyword. Docker Compose polls the same endpoint as its health check.
+Restarting helps on `503` and does nothing for a worker behind schedule. So set uptime monitors up like this:
+
+- alert on the status code;
+- add a keyword check for `"status": "ok"`, because `degraded` also answers `200` and the missing keyword is
+  the only thing that gives it away.
+
+Docker Compose polls the same endpoint as its health check.
 
 ### Local development
 
