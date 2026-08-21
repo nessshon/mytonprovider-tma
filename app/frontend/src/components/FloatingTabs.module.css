@@ -32,6 +32,9 @@
   left: 4px;
   border-radius: 18px;
   background: var(--ts-seg);
+}
+
+.thumbHeld {
   will-change: transform;
 }
 

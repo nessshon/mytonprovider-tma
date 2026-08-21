@@ -16,11 +16,11 @@
   background: var(--ts-thumb);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
   transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
 }
 
 .thumbHeld {
   transition: none;
+  will-change: transform;
 }
 
 .option {

@@ -44,7 +44,6 @@
   box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.28);
   transition: transform var(--ts-sheet-out-ms) var(--ts-sheet-ease);
   pointer-events: auto;
-  will-change: transform;
 }
 
 .full {
@@ -62,6 +61,7 @@
 
 .dragging {
   transition: none;
+  will-change: transform;
 }
 
 .behind {

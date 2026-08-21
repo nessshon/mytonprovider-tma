@@ -78,7 +78,7 @@ export function FloatingTabs<T extends string>({ tabs, tab, progress, onSelect, 
         {...handlers}
       >
         <span
-          className={styles.thumb}
+          className={cx(styles.thumb, offset !== null && styles.thumbHeld)}
           style={{
             width: `calc((100% - 8px) / ${tabs.length})`,
             transform: offset === null ? `translateX(${thumb * 100}%)` : `translateX(${offset}px)`,
