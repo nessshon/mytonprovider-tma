@@ -23,10 +23,17 @@
   scroll-snap-align: start;
   scroll-snap-stop: always;
   scrollbar-width: none;
-  padding: 0 16px 128px;
+  padding: 0 16px;
 }
 
 .pane::-webkit-scrollbar {
   width: 0;
   height: 0;
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+  padding-bottom: calc(48px + var(--ts-dock-space, 0px) + var(--ts-safe-bottom));
 }

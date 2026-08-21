@@ -136,7 +136,7 @@ export function TabPager<T extends string>({
           aria-labelledby={`tab-${key}`}
           onScroll={(event) => onPaneScroll?.(key, event.currentTarget.scrollTop)}
         >
-          {children(key)}
+          <div className={styles.inner}>{children(key)}</div>
         </div>
       ))}
     </div>
