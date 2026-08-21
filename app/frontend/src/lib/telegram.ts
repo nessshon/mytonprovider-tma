@@ -19,6 +19,7 @@ interface TelegramButton {
 }
 
 let insideTelegram = false;
+let launchStartParam = "";
 
 export function isInTelegram(): boolean {
   return insideTelegram;
@@ -36,6 +37,10 @@ export function initTelegram(): void {
     return;
   }
   insideTelegram = true;
+  launchStartParam = startParam;
+  if (location.hash.startsWith("#tgWebApp")) {
+    history.replaceState(null, "", `${location.pathname}${location.search}#/`);
+  }
   try {
     const debug = startParam.includes("debug") || import.meta.env.DEV;
     init({
@@ -68,11 +73,7 @@ export function getInitDataRaw(): string | null {
 }
 
 export function getStartParam(): string | null {
-  try {
-    return retrieveLaunchParams().tgWebAppStartParam ?? null;
-  } catch {
-    return null;
-  }
+  return launchStartParam || null;
 }
 
 interface ButtonState {
