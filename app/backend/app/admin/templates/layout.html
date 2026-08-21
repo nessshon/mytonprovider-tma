@@ -27,11 +27,5 @@
         <a href="#" class="nav-link px-2 hide-theme-light" data-sa-theme="light" aria-label="Light theme">
             <i class="fa-solid fa-sun"></i>
         </a>
-        <form action="{{ request.url_for(__name__ ~ ':logout') }}" method="post" class="m-0">
-            {{ csrf_input(request) }}
-            <button type="submit" class="nav-link px-2 border-0 bg-transparent" aria-label="Logout">
-                <i class="fa-solid fa-right-from-bracket"></i>
-            </button>
-        </form>
     </div>
 {% endblock %}

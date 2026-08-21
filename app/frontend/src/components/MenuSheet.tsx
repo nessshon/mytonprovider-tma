@@ -3,11 +3,12 @@ import { Icon } from "@/components/Icon/Icon";
 import type { GlyphName } from "@/components/Icon/glyphs";
 import { SegmentControl } from "@/components/SegmentControl";
 import { TelegramLoginButton } from "@/components/TelegramLoginButton";
+import { backend } from "@/data/backend";
 import { setExplorer, setLanguage, setTheme } from "@/data/sync";
 import { useAppliedTheme } from "@/hooks/useTheme";
 import { useAppliedLang, useT } from "@/i18n";
 import type { Lang } from "@/i18n/types";
-import { isInTelegram } from "@/lib/telegram";
+import { isInTelegram, notify } from "@/lib/telegram";
 import { useAuth } from "@/stores/auth";
 import { type Explorer, type Theme, useSettings } from "@/stores/settings";
 import { useTrusted } from "@/stores/trusted";
@@ -66,6 +67,13 @@ export function MenuSheet() {
   const user = useAuth((s) => s.user);
   const isAdmin = useAuth((s) => s.isAdmin);
   const inTelegram = isInTelegram();
+
+  const openAdmin = () => {
+    void backend
+      .adminSession()
+      .then(() => location.assign(`/admin/#theme=${theme}`))
+      .catch(() => notify("error"));
+  };
 
   return (
     <>
@@ -134,7 +142,7 @@ export function MenuSheet() {
       />
 
       <div className={styles.group}>
-        {isAdmin && <MenuRow glyph="sliders" label={t.adminPanel} href={`/admin/#theme=${theme}`} />}
+        {isAdmin && <MenuRow glyph="sliders" label={t.adminPanel} onClick={openAdmin} />}
         <MenuRow glyph="search" label={t.explorerTitle} onClick={() => navigate("/bags")} />
         <MenuRow glyph="check" label={t.trustedTitle} count={trustedCount} onClick={() => navigate("/trusted")} />
         <MenuRow glyph="server" label={t.becomeProvider} href="https://github.com/igroman787/mytonprovider" external />

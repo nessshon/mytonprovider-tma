@@ -1,58 +1,82 @@
 import logging
-import secrets
-from urllib.parse import urlencode
 
-from fastapi.concurrency import run_in_threadpool
-from starlette.datastructures import URL
-from starlette.exceptions import HTTPException
+from fastapi import HTTPException
 from starlette.requests import Request
-from starlette.responses import RedirectResponse, Response
-from starlette.status import HTTP_400_BAD_REQUEST, HTTP_403_FORBIDDEN
-from starlette_admin.auth import AdminUser, OAuthProvider
+from starlette.responses import JSONResponse, RedirectResponse, Response
+from starlette.routing import Route
+from starlette.status import (
+    HTTP_204_NO_CONTENT,
+    HTTP_303_SEE_OTHER,
+    HTTP_401_UNAUTHORIZED,
+    HTTP_403_FORBIDDEN,
+)
+from starlette.templating import Jinja2Templates
+from starlette_admin.auth import AdminUser, BaseAuthProvider
+from starlette_admin.helpers import index_url
 
 from app import config
 from app.api import auth
+from app.db import session_factory
+from app.db.repos import UserRepo
 
 logger = logging.getLogger(__name__)
 
 
-def _external_url(path: str, query: str) -> str:
-    url = f"{config.WEBAPP_URL}{path}"
-    return f"{url}?{query}" if query else url
+class TelegramAuthProvider(BaseAuthProvider):
+    templates: Jinja2Templates
 
+    def __init__(self) -> None:
+        super().__init__(allow_routes=["csrf", "session"])
 
-class TelegramAuthProvider(OAuthProvider):
-    async def redirect_to_provider(self, request: Request, callback_url: str) -> Response:
-        state = secrets.token_urlsafe(32)
-        request.session["state"] = state
-        url = URL(callback_url)
-        params = urlencode(
-            {
-                "response_type": "code",
-                "client_id": str(config.TG_CLIENT_ID),
-                "redirect_uri": _external_url(url.path, url.query),
-                "scope": "openid profile",
-                "state": state,
-            }
-        )
-        return RedirectResponse(f"{auth.OIDC_AUTH_URL}?{params}")
+    def get_routes(self, templates: Jinja2Templates) -> list[Route]:
+        self.templates = templates
+        return [
+            Route(self.login_path, self.render_login, methods=["GET"], name="login"),
+            Route(self.logout_path, self.render_logout, methods=["POST"], name="logout"),
+            Route("/csrf", self.issue_csrf, methods=["GET"], name="csrf"),
+            Route("/session", self.open_session, methods=["POST"], name="session"),
+        ]
 
-    async def handle_callback(self, request: Request) -> None:
-        state = request.session.pop("state", None)
-        code = request.query_params.get("code")
-        if not code or not state or state != request.query_params.get("state"):
-            raise HTTPException(HTTP_400_BAD_REQUEST, "Invalid login state")
-        url = request.url.remove_query_params(["code", "state"])
-        id_token = await auth.exchange_code(code, _external_url(url.path, url.query))
-        claims = await run_in_threadpool(auth.verify_id_token, id_token)
-        user_id = auth.claims_user_id(claims)
+    @staticmethod
+    async def issue_csrf(request: Request) -> Response:
+        return Response(status_code=HTTP_204_NO_CONTENT)
+
+    @staticmethod
+    async def open_session(request: Request) -> Response:
+        scheme, _, token = request.headers.get("authorization", "").partition(" ")
+        if scheme.lower() != "bearer" or not token:
+            return JSONResponse({"detail": "Missing bearer token"}, HTTP_401_UNAUTHORIZED)
+        try:
+            user_id = auth.read_session_token(token)
+        except HTTPException:
+            return JSONResponse({"detail": "Invalid session token"}, HTTP_401_UNAUTHORIZED)
         if user_id not in config.ADMIN_IDS:
             logger.warning("access denied for %s", user_id)
-            raise HTTPException(HTTP_403_FORBIDDEN, "Access denied")
-        logger.info("logged in: %s", user_id)
+            return JSONResponse({"detail": "Access denied"}, HTTP_403_FORBIDDEN)
+        async with session_factory() as session:
+            user = await UserRepo(session).get(user_id)
+        if user is None or user.banned_at is not None:
+            logger.warning("access denied for %s", user_id)
+            return JSONResponse({"detail": "Access denied"}, HTTP_403_FORBIDDEN)
         request.session["user_id"] = user_id
-        request.session["username"] = auth.claims_str(claims, "preferred_username") or auth.claims_str(claims, "name")
-        request.session["photo_url"] = auth.claims_str(claims, "picture")
+        request.session["username"] = user.username or user.fullname
+        request.session["photo_url"] = user.photo_url
+        logger.info("logged in: %s", user_id)
+        return Response(status_code=HTTP_204_NO_CONTENT)
+
+    async def render_login(self, request: Request) -> Response:
+        if getattr(request.state, "admin_user", None) is not None:
+            return RedirectResponse(index_url(request), status_code=HTTP_303_SEE_OTHER)
+        return self.templates.TemplateResponse(
+            request=request,
+            name="no_access.html",
+            status_code=HTTP_403_FORBIDDEN,
+        )
+
+    @staticmethod
+    async def render_logout(request: Request) -> Response:
+        request.session.clear()
+        return RedirectResponse(index_url(request), status_code=HTTP_303_SEE_OTHER)
 
     async def authenticate(self, request: Request) -> AdminUser | None:
         user_id = request.session.get("user_id")
@@ -60,7 +84,3 @@ class TelegramAuthProvider(OAuthProvider):
             return None
         username = request.session.get("username")
         return AdminUser(username=username or str(user_id), photo_url=request.session.get("photo_url"))
-
-    async def logout(self, request: Request) -> Response | None:
-        request.session.clear()
-        return None

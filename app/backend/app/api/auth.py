@@ -143,14 +143,10 @@ def issue_session_token(user_id: int) -> str:
     return jwt.encode(payload, config.JWT_SECRET, algorithm="HS256")
 
 
-def current_user_id(
-    credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
-) -> int:
-    if credentials is None:
-        raise unauthorized("Missing bearer token")
+def read_session_token(token: str) -> int:
     try:
         payload = jwt.decode(
-            credentials.credentials,
+            token,
             config.JWT_SECRET,
             algorithms=["HS256"],
             options={"require": ["exp"]},
@@ -158,6 +154,14 @@ def current_user_id(
         return int(payload["sub"])
     except (jwt.PyJWTError, KeyError, TypeError, ValueError) as error:
         raise unauthorized("Invalid session token") from error
+
+
+def current_user_id(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
+) -> int:
+    if credentials is None:
+        raise unauthorized("Missing bearer token")
+    return read_session_token(credentials.credentials)
 
 
 def claims_user_id(claims: dict[str, Any]) -> int:

@@ -24,6 +24,7 @@
                 paint();
             };
             apply(theme);
+            if (param) history.replaceState(null, "", location.pathname + location.search);
             const observer = new MutationObserver(() => paint() && observer.disconnect());
             observer.observe(document.documentElement, { childList: true, subtree: true });
             addEventListener("DOMContentLoaded", () => {
@@ -36,6 +37,30 @@
                     }),
                 );
             });
+        })();
+    </script>
+    <script>
+        (() => {
+            const proxy = window.TelegramWebviewProxy;
+            const framed = window.parent !== window;
+            if (!proxy && !framed) return;
+            const post = (type, data) => {
+                if (proxy) proxy.postEvent(type, JSON.stringify(data));
+                else window.parent.postMessage(JSON.stringify({ eventType: type, eventData: data }), "https://web.telegram.org");
+            };
+            const receive = (type) => {
+                if (type === "back_button_pressed") history.back();
+            };
+            window.TelegramGameProxy_receiveEvent = receive;
+            window.TelegramGameProxy = Object.assign(window.TelegramGameProxy || {}, { receiveEvent: receive });
+            window.Telegram = window.Telegram || {};
+            window.Telegram.WebView = Object.assign(window.Telegram.WebView || {}, { receiveEvent: receive });
+            addEventListener("message", (event) => {
+                try {
+                    receive(JSON.parse(event.data).eventType);
+                } catch (e) {}
+            });
+            post("web_app_setup_back_button", { is_visible: true });
         })();
     </script>
     <style>
@@ -55,6 +80,9 @@
             --tblr-secondary: #8a8a8e;
             --tblr-border-color: rgba(0, 0, 0, 0.1);
             --tblr-border-color-translucent: rgba(0, 0, 0, 0.07);
+        }
+        .navbar-vertical .nav-item.dropdown.ms-3 {
+            display: none;
         }
         [data-bs-theme="dark"] {
             --tblr-body-bg: #0e0e11;

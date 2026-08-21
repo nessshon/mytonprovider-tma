@@ -16,11 +16,14 @@ export default defineConfig(({ mode }) => ({
   },
   server: {
     host: true,
-    proxy: {
-      '/api': {
-        target: loadEnv(mode, process.cwd(), '').BACKEND || 'http://localhost:8080',
-        changeOrigin: true,
-      },
-    },
+    proxy: Object.fromEntries(
+      ['/api', '/admin'].map((path) => [
+        path,
+        {
+          target: loadEnv(mode, process.cwd(), '').BACKEND || 'http://localhost:8080',
+          changeOrigin: true,
+        },
+      ]),
+    ),
   },
 }));
