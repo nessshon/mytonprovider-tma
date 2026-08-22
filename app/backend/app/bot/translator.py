@@ -3,16 +3,6 @@ def t(lang: str, code: str) -> str:
     return source[code] if code in source else TEXTS["en"][code]
 
 
-def bytes_unit(lang: str, n: int) -> str:
-    if lang != "ru":
-        return "bytes"
-    if n % 10 == 1 and n % 100 != 11:
-        return "байт"
-    if 2 <= n % 10 <= 4 and not 12 <= n % 100 <= 14:
-        return "байта"
-    return "байт"
-
-
 TEXTS = {
     "ru": {
         "start_title": "My TON Provider",
@@ -25,10 +15,6 @@ TEXTS = {
         "bag_content": "Содержимое:",
         "bag_contract": "Контракт:",
         "bag_owner": "Владелец:",
-        "size_gb": "{v} Гб",
-        "size_mb": "{v} Мб",  # noqa: RUF001
-        "size_kb": "{v} Кб",  # noqa: RUF001
-        "size_bytes": "{v} {unit}",
         "list_more": "… и ещё {n}",
         "monthly_title": "Ежемесячный отчёт",
         "monthly_earned": "Заработано",
@@ -61,10 +47,6 @@ TEXTS = {
         "bag_content": "Content:",
         "bag_contract": "Contract:",
         "bag_owner": "Owner:",
-        "size_gb": "{v} Gb",
-        "size_mb": "{v} Mb",
-        "size_kb": "{v} Kb",
-        "size_bytes": "{v} {unit}",
         "list_more": "… and {n} more",
         "monthly_title": "Monthly report",
         "monthly_earned": "Earned",

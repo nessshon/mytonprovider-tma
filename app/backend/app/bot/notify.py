@@ -48,11 +48,11 @@ async def monthly_report(
     user: UserModel,
     pubkey: str,
     earned_nano: int,
-    growth_gb: float | None,
+    growth_bytes: int | None,
     traffic_in_bytes: int,
     traffic_out_bytes: int,
 ) -> bool:
-    rich_message = render.monthly(user.lang, pubkey, earned_nano, growth_gb, traffic_in_bytes, traffic_out_bytes)
+    rich_message = render.monthly(user.lang, pubkey, earned_nano, growth_bytes, traffic_in_bytes, traffic_out_bytes)
     return await _deliver_rich(user, rich_message)
 
 

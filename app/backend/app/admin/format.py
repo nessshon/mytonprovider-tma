@@ -4,7 +4,7 @@ from starlette.requests import Request
 from starlette_admin import RequestAction
 
 from app import config
-from app.utils import address_url, format_amount, user_friendly
+from app.utils import address_url, format_amount, format_size, user_friendly
 
 
 def address_page(address: str) -> str:
@@ -28,10 +28,7 @@ def gram(value: int) -> str:
 
 
 def size(value: int) -> str:
-    for scale, unit in ((1024**4, "Tb"), (1024**3, "Gb"), (1024**2, "Mb"), (1024, "Kb")):
-        if value >= scale:
-            return f"{format_amount(value / scale)} {unit}"
-    return f"{value} b"
+    return format_size(value)
 
 
 def percent(value: float) -> str:
@@ -39,7 +36,7 @@ def percent(value: float) -> str:
 
 
 def mbps(value: float) -> str:
-    return f"{value:.1f} Mbps"
+    return f"{value:.1f} Mbit/s"
 
 
 def duration(value: float) -> str:

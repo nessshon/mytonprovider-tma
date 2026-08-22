@@ -57,7 +57,7 @@ class SendReportsWorker(BaseWorker):
         traffic_out = max(0, last.traffic_out - first.traffic_out)
         growth = None
         if first.disk_used is not None and last.disk_used is not None:
-            growth = (last.disk_used - first.disk_used) / 1024**3
+            growth = last.disk_used - first.disk_used
         if not await notify.monthly_report(user, pubkey, earned, growth, traffic_in, traffic_out):
             return
         if marker is None:

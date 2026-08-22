@@ -12,8 +12,8 @@ from aiogram.types import (
 
 from app import config
 from app.alerts import AlertColor
-from app.bot.translator import bytes_unit, t
-from app.utils import address_url, format_amount, short_address, short_key, user_friendly
+from app.bot.translator import t
+from app.utils import address_url, format_amount, format_size, short_address, short_key, user_friendly
 
 APP_LOGO = "5345821286524301151"
 BAG_LOGO = "5818955300463447293"
@@ -38,8 +38,6 @@ TX_EXPLORERS = {
 }
 
 BAG_GATEWAY = "https://mytonstorage.org/api/v1/gateway/{bag_id}"
-
-SIZE_UNITS = ((1024**3, "size_gb"), (1024**2, "size_mb"), (1024, "size_kb"))
 
 
 class Bag(NamedTuple):
@@ -91,19 +89,12 @@ def alert(lang: str, title: str, pubkey: str, color: AlertColor) -> str:
     return f"{emoji} <b>{title}</b>\n\n<b>{t(lang, 'alert_provider')}</b> {provider_link(pubkey)}"
 
 
-def _size(lang: str, size: int) -> str:
-    for scale, code in SIZE_UNITS:
-        if size >= scale:
-            return t(lang, code).format(v=format_amount(size / scale))
-    return t(lang, "size_bytes").format(v=size, unit=bytes_unit(lang, size))
-
-
 def bag(lang: str, explorer: str, pubkey: str, item: Bag, trusted: bool) -> str:
     emoji = custom_emoji(BAG_LOGO, "\U0001f4e6")
     lines = [f"{emoji} <b>{t(lang, 'bag_added_title')}</b> {bag_link(item.bag_id)}", ""]
     if item.size:
         gateway = BAG_GATEWAY.format(bag_id=item.bag_id.lower())
-        lines.append(f'<b>{t(lang, "bag_content")}</b> <a href="{gateway}">{_size(lang, item.size)}</a>')
+        lines.append(f'<b>{t(lang, "bag_content")}</b> <a href="{gateway}">{format_size(item.size)}</a>')
     lines.append(f"<b>{t(lang, 'bag_contract')}</b> {address_link(explorer, item.address)}")
     if item.owner:
         mark = " " + custom_emoji(TRUSTED_MARK, "\u2714\ufe0f") if trusted else ""
@@ -146,15 +137,15 @@ def monthly(
     lang: str,
     pubkey: str,
     earned_nano: int,
-    growth_gb: float | None,
+    growth_bytes: int | None,
     traffic_in_bytes: int,
     traffic_out_bytes: int,
 ) -> InputRichMessage:
     rows = [
         (t(lang, "monthly_earned"), f"{format_amount(earned_nano / 1e9, digits=4, sign=True)} GRAM"),
-        (t(lang, "monthly_space"), f"{format_amount(growth_gb or 0, sign=True)} GB"),
-        (t(lang, "monthly_traffic_in"), f"↓{format_amount(traffic_in_bytes / 1024**3)} GB"),
-        (t(lang, "monthly_traffic_out"), f"↑{format_amount(traffic_out_bytes / 1024**3)} GB"),
+        (t(lang, "monthly_space"), format_size(growth_bytes or 0, sign=True)),
+        (t(lang, "monthly_traffic_in"), f"↓{format_size(traffic_in_bytes)}"),
+        (t(lang, "monthly_traffic_out"), f"↑{format_size(traffic_out_bytes)}"),
     ]
     return InputRichMessage(
         blocks=[

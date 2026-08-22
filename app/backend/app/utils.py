@@ -18,6 +18,16 @@ def format_amount(value: float, digits: int = 2, sign: bool = False) -> str:
     return f"{value:{spec}}".rstrip("0").rstrip(".")
 
 
+SIZE_UNITS = ((1000**4, "TB"), (1000**3, "GB"), (1000**2, "MB"), (1000, "KB"))
+
+
+def format_size(value: int, sign: bool = False) -> str:
+    for scale, unit in SIZE_UNITS:
+        if abs(value) >= scale:
+            return f"{format_amount(value / scale, sign=sign)} {unit}"
+    return f"{value:+d} B" if sign else f"{value} B"
+
+
 ADDRESS_EXPLORERS = {
     "tonscan": "https://tonscan.org/address/{address}",
     "tonviewer": "https://tonviewer.com/{address}",
