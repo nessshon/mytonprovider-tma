@@ -13,14 +13,14 @@ export interface StatusReason {
 export interface Telemetry {
   storageGitHash: string | null;
   providerGitHash: string | null;
-  totalSpace: number | null;
-  usedSpace: number | null;
+  totalSpaceBytes: number | null;
+  usedSpaceBytes: number | null;
   updatedAt: number | null;
   cpuName: string | null;
   cpuCount: number | null;
   cpuVirtual: boolean | null;
-  totalRam: number | null;
-  usageRam: number | null;
+  totalRamBytes: number | null;
+  usageRamBytes: number | null;
   diskRead: string | null;
   diskWrite: string | null;
   downloadSpeed: number | null;

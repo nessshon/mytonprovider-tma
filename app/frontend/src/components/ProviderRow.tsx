@@ -2,9 +2,8 @@ import { CopyButton } from "@/components/CopyButton";
 import { StatusDot } from "@/components/StatusDot";
 import type { Provider } from "@/data/types";
 import { useT } from "@/i18n";
-import type { Dict } from "@/i18n/types";
 import { SC, rankColor, tint } from "@/lib/colors";
-import { EMPTY, KEY_CHARS, amount, fitKey, formatPrice, formatTime, freeSpaceTone, spaceFreePercent, trimDown } from "@/lib/format";
+import { EMPTY, KEY_CHARS, amount, fitKey, formatBytes, formatPrice, formatTime, freeSpaceTone, spaceFreePercent, trimDown } from "@/lib/format";
 import { describeStatus } from "@/lib/status";
 import { useCatalog } from "@/stores/catalog";
 import { useKeyChars } from "@/hooks/useKeyChars";
@@ -29,10 +28,10 @@ function withUnits(text: string): ReactNode {
   );
 }
 
-function freeSpace(provider: Provider, t: Dict): string {
-  const { totalSpace, usedSpace } = provider.telemetry;
-  if (!provider.hasTelemetry || totalSpace === null || usedSpace === null) return EMPTY;
-  return t.gb(amount(Math.max(totalSpace - usedSpace, 0)));
+function freeSpace(provider: Provider): string {
+  const { totalSpaceBytes, usedSpaceBytes } = provider.telemetry;
+  if (!provider.hasTelemetry || totalSpaceBytes === null || usedSpaceBytes === null) return EMPTY;
+  return formatBytes(Math.max(totalSpaceBytes - usedSpaceBytes, 0));
 }
 
 export function ProviderRow({ provider, onOpen, trailing }: ProviderRowProps) {
@@ -43,7 +42,7 @@ export function ProviderRow({ provider, onOpen, trailing }: ProviderRowProps) {
   const status = describeStatus(provider, t);
   const rank = useCatalog((s) => s.ranks[provider.pubkey]);
   const freePercent = provider.hasTelemetry
-    ? spaceFreePercent(provider.telemetry.totalSpace, provider.telemetry.usedSpace)
+    ? spaceFreePercent(provider.telemetry.totalSpaceBytes, provider.telemetry.usedSpaceBytes)
     : null;
   const place = provider.location?.country || provider.location?.countryIso || EMPTY;
   const working = provider.workingTime > 0 ? formatTime(provider.workingTime, t, true) : EMPTY;
@@ -100,7 +99,7 @@ export function ProviderRow({ provider, onOpen, trailing }: ProviderRowProps) {
               </b>
             </>
           ),
-          withUnits(freeSpace(provider, t)),
+          withUnits(freeSpace(provider)),
         )}
         {cell(t.workingTime, withUnits(working))}
         {cell(t.location, place)}

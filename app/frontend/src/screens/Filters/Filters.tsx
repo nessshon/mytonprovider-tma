@@ -43,7 +43,7 @@ const SLIDER_META: Record<SliderKey, { labelKey: DictStringKey; dec: number; ste
   price: { labelKey: "priceF", dec: 2, step: 0.01, unit: "GRAM" },
   bag: { labelKey: "bagF", dec: 0, step: 1, unit: "GB" },
   cores: { labelKey: "coresF", dec: 0, step: 1, unit: "" },
-  ram: { labelKey: "ramF", dec: 0, step: 1, unit: "GB" },
+  ram: { labelKey: "ramF", dec: 0, step: 1, unit: "GiB" },
   age: { labelKey: "ageF", dec: 0, step: 1, unit: "", unitKey: "unitDays" },
   minSpan: { labelKey: "minSpanF", dec: 0, step: 1, unit: "", unitKey: "unitDays" },
   maxSpan: { labelKey: "maxSpanF", dec: 0, step: 1, unit: "", unitKey: "unitDays" },

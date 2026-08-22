@@ -1,8 +1,8 @@
-import { GB, NANO, PING_MAX, diskSpeedToNum } from "@/lib/format";
+import { BITS_IN_MBIT, BYTES_IN_GB, BYTES_IN_GIB, NANO, PING_MAX, diskSpeedToNum } from "@/lib/format";
 import { statusTone } from "@/lib/status";
 import type { CatalogFilters, FilterBounds, Provider, Range, Sort } from "./types";
 
-const FREE_SPACE_GB = 100;
+const FREE_SPACE_BYTES = 100 * BYTES_IN_GIB;
 
 type RangeKey =
   | "rating"
@@ -21,6 +21,10 @@ type RangeKey =
   | "upload"
   | "ping";
 
+function toUnits(bytes: number | null, factor: number): number | null {
+  return bytes === null ? null : bytes / factor;
+}
+
 function diskMiB(text: string | null): number | null {
   const value = diskSpeedToNum(text);
   return value === null ? null : value / 1048576;
@@ -30,17 +34,17 @@ const METRIC: Record<RangeKey, (p: Provider) => number | null> = {
   rating: (p) => p.rating,
   uptime: (p) => p.uptime,
   price: (p) => p.price / NANO,
-  bag: (p) => p.maxBagBytes / GB,
+  bag: (p) => p.maxBagBytes / BYTES_IN_GB,
   cores: (p) => p.telemetry.cpuCount,
-  ram: (p) => p.telemetry.totalRam,
+  ram: (p) => toUnits(p.telemetry.totalRamBytes, BYTES_IN_GIB),
   age: (p) => (Date.now() / 1000 - p.regTime) / 86400,
   minSpan: (p) => p.minSpan / 86400,
   maxSpan: (p) => p.maxSpan / 86400,
-  space: (p) => p.telemetry.totalSpace,
+  space: (p) => toUnits(p.telemetry.totalSpaceBytes, BYTES_IN_GB),
   diskRead: (p) => diskMiB(p.telemetry.diskRead),
   diskWrite: (p) => diskMiB(p.telemetry.diskWrite),
-  download: (p) => (p.telemetry.downloadSpeed === null ? null : p.telemetry.downloadSpeed / 1048576),
-  upload: (p) => (p.telemetry.uploadSpeed === null ? null : p.telemetry.uploadSpeed / 1048576),
+  download: (p) => toUnits(p.telemetry.downloadSpeed, BITS_IN_MBIT),
+  upload: (p) => toUnits(p.telemetry.uploadSpeed, BITS_IN_MBIT),
   ping: (p) => (p.telemetry.ping !== null && p.telemetry.ping < PING_MAX ? p.telemetry.ping : null),
 };
 
@@ -49,9 +53,9 @@ const FROM_MIN: Partial<Record<RangeKey, boolean>> = { rating: true, price: true
 
 function hasFreeSpace(p: Provider): boolean {
   if (!p.hasTelemetry) return false;
-  const total = p.telemetry.totalSpace ?? 0;
-  const used = p.telemetry.usedSpace ?? 0;
-  return total - used > FREE_SPACE_GB;
+  const total = p.telemetry.totalSpaceBytes ?? 0;
+  const used = p.telemetry.usedSpaceBytes ?? 0;
+  return total - used > FREE_SPACE_BYTES;
 }
 
 function within(value: number | null, range: Range, bound: Range | undefined): boolean {

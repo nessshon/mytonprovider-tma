@@ -1,9 +1,9 @@
 import type { Dict } from "@/i18n/types";
 import type { StatusTone } from "./colors";
 
-export const GB = 1073741824;
-const MB = 1048576;
-const KB = 1024;
+export const BYTES_IN_GIB = 1024 ** 3;
+export const BYTES_IN_GB = 1e9;
+export const BITS_IN_MBIT = 1e6;
 export const NANO = 1_000_000_000;
 export const PING_MAX = 10000;
 
@@ -52,12 +52,36 @@ export function formatPriceGram(nanoTon: number): string {
   return `${formatPrice(nanoTon)} GRAM`;
 }
 
-export function formatSpace(bytes: number, t: Dict): string {
-  if (bytes <= 0) return EMPTY;
-  if (bytes < KB) return t.bytes(bytes);
-  if (bytes < MB) return t.kb(amount(bytes / KB));
-  if (bytes < GB) return t.mb(amount(bytes / MB));
-  return t.gb(amount(bytes / GB));
+interface ByteScale {
+  step: number;
+  units: string[];
+}
+
+export const DECIMAL: ByteScale = { step: 1000, units: ["B", "KB", "MB", "GB", "TB"] };
+export const BINARY: ByteScale = { step: 1024, units: ["B", "KiB", "MiB", "GiB", "TiB"] };
+
+export function scaleFor(bytes: number, scale: ByteScale): { divisor: number; unit: string } {
+  let divisor = 1;
+  let index = 0;
+  while (bytes >= divisor * scale.step && index < scale.units.length - 1) {
+    divisor *= scale.step;
+    index += 1;
+  }
+  return { divisor, unit: scale.units[index] };
+}
+
+function formatScaled(bytes: number | null, scale: ByteScale): string {
+  if (bytes === null || !Number.isFinite(bytes) || bytes <= 0) return EMPTY;
+  const { divisor, unit } = scaleFor(bytes, scale);
+  return `${amount(bytes / divisor)} ${unit}`;
+}
+
+export function formatBytes(bytes: number | null): string {
+  return formatScaled(bytes, DECIMAL);
+}
+
+export function formatRam(bytes: number | null): string {
+  return formatScaled(bytes, BINARY);
 }
 
 export function formatTime(secs: number, t: Dict, skipLast = false): string {
@@ -80,8 +104,8 @@ export function ago(secs: number, t: Dict): string {
   return secs < JUST_NOW_SEC ? t.justNow : t.ago(formatTime(secs, t, true));
 }
 
-export function formatMbps(bytesPerSec: number | null): string {
-  return bytesPerSec && bytesPerSec > 0 ? `${Math.round(bytesPerSec / MB)} Mbps` : EMPTY;
+export function formatMbits(bitsPerSec: number | null): string {
+  return bitsPerSec && bitsPerSec > 0 ? `${Math.round(bitsPerSec / BITS_IN_MBIT)} Mbit/s` : EMPTY;
 }
 
 export function formatPing(ms: number | null): string {

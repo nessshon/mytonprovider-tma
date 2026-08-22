@@ -21,7 +21,7 @@ import type { Dict } from "@/i18n/types";
 import { toUserFriendly } from "@/lib/address";
 import { SC, rankColor, tint } from "@/lib/colors";
 import { cx } from "@/lib/cx";
-import { EMPTY, GB, ago, amount, formatMbps, formatPing, formatPrice, formatPriceGram, formatSpace, formatTime, shorten, uptimeTone } from "@/lib/format";
+import { EMPTY, ago, amount, formatBytes, formatMbits, formatPing, formatPrice, formatPriceGram, formatRam, formatTime, shorten, uptimeTone } from "@/lib/format";
 import { describeStatus } from "@/lib/status";
 import { useAuth } from "@/stores/auth";
 import { useCatalog } from "@/stores/catalog";
@@ -41,7 +41,7 @@ function placeOf(p: Provider, t: Dict): string {
 function providerFields(p: Provider, t: Dict): Field[] {
   return [
     { label: t.span, value: `${formatTime(p.minSpan, t)} – ${formatTime(p.maxSpan, t)}` },
-    { label: t.maxBag, value: formatSpace(p.maxBagBytes, t) },
+    { label: t.maxBag, value: formatBytes(p.maxBagBytes) },
     { label: t.workingTime, value: formatTime(p.workingTime, t) },
     { label: t.lastOnline, value: p.lastOnlineCheckTime === null ? t.unknown : ago(p.staleSec, t) },
     ...(p.hasTelemetry
@@ -61,10 +61,13 @@ function providerFields(p: Provider, t: Dict): Field[] {
 
 function hardwareFields(p: Provider, t: Dict): Field[] {
   const tel = p.telemetry;
-  const ram = tel.usageRam != null && tel.totalRam != null ? `${amount(tel.usageRam)} / ${amount(tel.totalRam)} Gb` : EMPTY;
+  const ram =
+    tel.usageRamBytes != null && tel.totalRamBytes != null
+      ? `${formatRam(tel.usageRamBytes)} / ${formatRam(tel.totalRamBytes)}`
+      : EMPTY;
   const space =
-    tel.usedSpace != null && tel.totalSpace != null
-      ? `${formatSpace(tel.usedSpace * GB, t)} / ${formatSpace(tel.totalSpace * GB, t)}`
+    tel.usedSpaceBytes != null && tel.totalSpaceBytes != null
+      ? `${formatBytes(tel.usedSpaceBytes)} / ${formatBytes(tel.totalSpaceBytes)}`
       : EMPTY;
   return [
     { label: t.cpuName, value: tel.cpuName ?? EMPTY },
@@ -78,8 +81,8 @@ function hardwareFields(p: Provider, t: Dict): Field[] {
 function networkFields(p: Provider, t: Dict): Field[] {
   const tel = p.telemetry;
   return [
-    { label: t.stDownload, value: formatMbps(tel.downloadSpeed) },
-    { label: t.stUpload, value: formatMbps(tel.uploadSpeed) },
+    { label: t.stDownload, value: formatMbits(tel.downloadSpeed) },
+    { label: t.stUpload, value: formatMbits(tel.uploadSpeed) },
     { label: t.stPing, value: formatPing(tel.ping) },
     { label: t.country, value: tel.country ?? t.unknown },
     { label: t.isp, value: tel.isp ?? EMPTY },

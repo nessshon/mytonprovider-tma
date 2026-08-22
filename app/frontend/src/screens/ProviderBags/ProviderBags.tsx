@@ -8,7 +8,7 @@ import { backend, type ProblemBag } from "@/data/backend";
 import { useT } from "@/i18n";
 import type { Dict } from "@/i18n/types";
 import { SC } from "@/lib/colors";
-import { JUST_NOW_SEC, formatSpace, formatTime, shorten } from "@/lib/format";
+import { JUST_NOW_SEC, formatBytes, formatTime, shorten } from "@/lib/format";
 import { describeStatus, reasonText, reasonTone } from "@/lib/status";
 import { useCatalog } from "@/stores/catalog";
 import { useEffect, useState } from "react";
@@ -125,7 +125,7 @@ export function ProviderBags() {
                   </div>
                   <div className={styles.meta}>{bagAge(nowSec - bag.reason_at, t)}</div>
                 </div>
-                {bag.size != null && <span className={styles.rsize}>{formatSpace(bag.size, t)}</span>}
+                {bag.size != null && <span className={styles.rsize}>{formatBytes(bag.size)}</span>}
               </div>
             ))}
           </div>

@@ -100,13 +100,13 @@ export interface OwnerSummary {
   earned: number | null;
   traffic_in: number | null;
   traffic_out: number | null;
-  storage_growth_gb: number | null;
+  storage_growth_bytes: number | null;
 }
 
 interface OwnerAllTime {
   earned: number | null;
   traffic: number | null;
-  stored_gb: number | null;
+  stored_bytes: number | null;
 }
 
 export interface ProviderPayload {

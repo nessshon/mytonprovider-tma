@@ -1,18 +1,23 @@
+import { BYTES_IN_GB, BYTES_IN_GIB } from "@/lib/format";
 import type { ProviderDto, TelemetryDto } from "./dto";
 import type { Provider, StatusReason, Telemetry } from "./types";
+
+function bytesOf(value: number | null | undefined, factor: number): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value * factor : null;
+}
 
 function adaptTelemetry(t: TelemetryDto): Telemetry {
   return {
     storageGitHash: t.storage_git_hash ?? null,
     providerGitHash: t.provider_git_hash ?? null,
-    totalSpace: t.total_provider_space ?? null,
-    usedSpace: t.used_provider_space ?? null,
+    totalSpaceBytes: bytesOf(t.total_provider_space, BYTES_IN_GIB),
+    usedSpaceBytes: bytesOf(t.used_provider_space, BYTES_IN_GIB),
     updatedAt: t.updated_at ?? null,
     cpuName: t.cpu_name ?? null,
     cpuCount: t.cpu_number ?? null,
     cpuVirtual: t.cpu_is_virtual ?? null,
-    totalRam: t.total_ram ?? null,
-    usageRam: t.usage_ram ?? null,
+    totalRamBytes: bytesOf(t.total_ram, BYTES_IN_GB),
+    usageRamBytes: bytesOf(t.usage_ram, BYTES_IN_GB),
     diskRead: t.qd64_disk_read_speed ?? null,
     diskWrite: t.qd64_disk_write_speed ?? null,
     downloadSpeed: t.speedtest_download ?? null,

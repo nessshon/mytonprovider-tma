@@ -1,6 +1,6 @@
 import type { TriggerKey } from "@/i18n/types";
 import { ACCENT, SC } from "@/lib/colors";
-import { EMPTY, GB, NANO, amount, formatPriceGram } from "@/lib/format";
+import { EMPTY, NANO, amount, formatBytes, formatPriceGram } from "@/lib/format";
 import { DEFAULT_THRESHOLD, type ThresholdMap } from "./alerts";
 import type { OwnerChartPoint, OwnerPayload, OwnerSummary, OwnerTriggerEntry } from "./backend";
 import type { Provider } from "./types";
@@ -43,8 +43,8 @@ interface OwnerChartData {
 interface OwnerData {
   balance: string;
   balanceUpdatedAt: number | null;
-  usedGB: string;
-  totalGB: string;
+  usedSpace: string;
+  totalSpace: string;
   usedPct: number;
   barColor: string;
   spaceOver: boolean;
@@ -78,20 +78,13 @@ export function ownerTriggers(entries: OwnerTriggerEntry[]): OwnerTrigger[] {
 
 const GAUGE_KEYS: GaugeKey[] = ["cpu_high", "ram_high", "disk_load_high", "network_high"];
 
-function formatBytes(bytes: number | null): string {
-  if (bytes == null) return EMPTY;
-  const gb = bytes / GB;
-  return gb >= 1024 ? `${amount(gb / 1024)} TB` : `${amount(gb)} GB`;
-}
-
 function formatGram(nano: number | null): string {
   return nano != null ? formatPriceGram(nano) : EMPTY;
 }
 
-function formatGrowth(gb: number | null): string {
-  if (gb == null) return EMPTY;
-  const sign = gb >= 0 ? "+" : "-";
-  return `${sign}${amount(Math.abs(gb))} GB`;
+function formatGrowth(bytes: number | null): string {
+  if (bytes == null) return EMPTY;
+  return `${bytes >= 0 ? "+" : "-"}${formatBytes(Math.abs(bytes))}`;
 }
 
 function summaryBlock(summary: OwnerSummary) {
@@ -99,7 +92,7 @@ function summaryBlock(summary: OwnerSummary) {
     earned: formatGram(summary.earned),
     trafficIn: formatBytes(summary.traffic_in),
     trafficOut: formatBytes(summary.traffic_out),
-    storageGrowth: formatGrowth(summary.storage_growth_gb),
+    storageGrowth: formatGrowth(summary.storage_growth_bytes),
   };
 }
 
@@ -139,9 +132,9 @@ function threshold(thresholds: ThresholdMap, key: GaugeKey): number {
 }
 
 export function adaptOwner(p: Provider, payload: OwnerPayload, thresholds: ThresholdMap): OwnerData {
-  const usedGB = p.telemetry.usedSpace ?? 0;
-  const totalGB = p.telemetry.totalSpace ?? 0;
-  const usedPct = totalGB > 0 ? Math.min(100, (usedGB / totalGB) * 100) : 0;
+  const usedBytes = p.telemetry.usedSpaceBytes ?? 0;
+  const totalBytes = p.telemetry.totalSpaceBytes ?? 0;
+  const usedPct = totalBytes > 0 ? Math.min(100, (usedBytes / totalBytes) * 100) : 0;
   const usedPctRound = Math.round(usedPct);
   const spaceThreshold = thresholds.disk_space_low ?? DEFAULT_THRESHOLD;
   const barColor = usedPct >= 99 ? SC.red : usedPct >= spaceThreshold ? SC.orange : ACCENT;
@@ -155,20 +148,20 @@ export function adaptOwner(p: Provider, payload: OwnerPayload, thresholds: Thres
   return {
     balance: payload.balance != null ? amount(payload.balance / NANO) : EMPTY,
     balanceUpdatedAt: payload.balance_updated_at,
-    usedGB: amount(usedGB),
-    totalGB: amount(totalGB),
+    usedSpace: formatBytes(usedBytes),
+    totalSpace: formatBytes(totalBytes),
     usedPct: usedPctRound,
     barColor,
     spaceOver: usedPctRound >= spaceThreshold,
     summary: summaryBlock(payload.summary),
     monthly: {
       earned: formatGram(payload.monthly.earned),
-      space: formatGrowth(payload.monthly.storage_growth_gb),
+      space: formatGrowth(payload.monthly.storage_growth_bytes),
       traffic: formatBytes(monthlyTraffic),
     },
     allTime: {
       earned: formatGram(payload.all_time.earned),
-      space: payload.all_time.stored_gb != null ? `${amount(payload.all_time.stored_gb)} GB` : EMPTY,
+      space: formatBytes(payload.all_time.stored_bytes),
       traffic: formatBytes(payload.all_time.traffic),
     },
     gauges: GAUGE_KEYS.map((key) => ({

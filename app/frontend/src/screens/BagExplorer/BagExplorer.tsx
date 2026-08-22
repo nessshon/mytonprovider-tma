@@ -16,7 +16,7 @@ import { useT } from "@/i18n";
 import type { Dict } from "@/i18n/types";
 import { ADDRESS_RE, RAW_RE, toUserFriendly } from "@/lib/address";
 import { SC, tint } from "@/lib/colors";
-import { EMPTY, ago, formatPriceGram, formatSpace, formatTime, shorten } from "@/lib/format";
+import { EMPTY, ago, formatBytes, formatPriceGram, formatTime, shorten } from "@/lib/format";
 import { bagGatewayUrl } from "@/lib/gateway";
 import { reasonText, reasonTone } from "@/lib/status";
 import { useCatalog } from "@/stores/catalog";
@@ -182,8 +182,8 @@ export function BagExplorer() {
                 {shorten(result.chain.bagId, 12).toUpperCase()}
               </a>
             </CopyRow>
-            <FieldRow divider label={t.bagSize} value={formatSpace(result.chain.fileSize, t)} />
-            <FieldRow divider label={t.bagChunk} value={formatSpace(result.chain.chunkSize, t)} />
+            <FieldRow divider label={t.bagSize} value={formatBytes(result.chain.fileSize)} />
+            <FieldRow divider label={t.bagChunk} value={formatBytes(result.chain.chunkSize)} />
             <CopyRow label={t.bagMerkle} copyValue={result.chain.merkleHash} divider>
               <span className={styles.mono}>{shorten(result.chain.merkleHash, 12)}</span>
             </CopyRow>

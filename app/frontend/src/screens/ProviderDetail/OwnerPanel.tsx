@@ -88,7 +88,7 @@ export function OwnerPanel({ provider, pubkey, children }: { provider: Provider;
             <div className={styles.storageTop}>
               <span className={styles.subLabel}>{t.storageUsage}</span>
               <span className={styles.storageValue}>
-                {owner.usedGB} / {owner.totalGB} GB
+                {owner.usedSpace} / {owner.totalSpace}
               </span>
             </div>
             <div className={styles.storageBarRow}>
