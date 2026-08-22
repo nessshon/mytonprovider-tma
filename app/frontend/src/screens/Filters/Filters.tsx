@@ -16,6 +16,7 @@ import type { DictStringKey } from "@/i18n/types";
 import { cx } from "@/lib/cx";
 import { useCatalog } from "@/stores/catalog";
 import { useCatalogQuery } from "@/stores/catalogQuery";
+import { useNames } from "@/stores/names";
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./Filters.module.css";
@@ -125,6 +126,8 @@ export function Filters() {
   const navigate = useNavigate();
 
   const providers = useCatalog((s) => s.providers);
+
+  const names = useNames((s) => s.providers);
   const bounds = useCatalog((s) => s.bounds);
   const load = useCatalog((s) => s.load);
 
@@ -163,7 +166,7 @@ export function Filters() {
   }, [providers]);
 
   const resultCount = useMemo(
-    () => selectCatalog(providers, { favTab: false, search, filters, sort, favorites: [], bounds }).length,
+    () => selectCatalog(providers, { favTab: false, search, filters, sort, favorites: [], names, bounds }).length,
     [providers, search, filters, sort, bounds],
   );
 

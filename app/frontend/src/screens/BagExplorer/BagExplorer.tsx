@@ -20,6 +20,7 @@ import { EMPTY, ago, formatBytes, formatPriceGram, formatTime, shorten } from "@
 import { bagGatewayUrl } from "@/lib/gateway";
 import { reasonText, reasonTone } from "@/lib/status";
 import { useCatalog } from "@/stores/catalog";
+import { useNames } from "@/stores/names";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import styles from "./BagExplorer.module.css";
@@ -80,6 +81,7 @@ export function BagExplorer() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const providers = useCatalog((s) => s.providers);
+  const names = useNames((s) => s.providers);
   const load = useCatalog((s) => s.load);
 
   const [query, setQuery] = useState("");
@@ -218,7 +220,7 @@ export function BagExplorer() {
               return (
                 <Card key={prov.pubkey}>
                   <div className={styles.phead}>
-                    <span className={styles.pk}>{shorten(prov.pubkey, 16).toUpperCase()}</span>
+                    <span className={styles.pk}>{names[prov.pubkey] || shorten(prov.pubkey, 16).toUpperCase()}</span>
                     <CopyButton value={prov.pubkey} />
                   </div>
                   <div className={styles.pstat}>

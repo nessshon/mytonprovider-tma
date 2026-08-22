@@ -19,6 +19,7 @@ import { useAuth } from "@/stores/auth";
 import { useCatalog } from "@/stores/catalog";
 import { PAGE_SIZE, type Tab, useCatalogQuery } from "@/stores/catalogQuery";
 import { useFavorites } from "@/stores/favorites";
+import { useNames } from "@/stores/names";
 import { useSubscriptions } from "@/stores/subscriptions";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useNavigate } from "react-router-dom";
@@ -54,6 +55,7 @@ export function Home() {
   const resetFilters = useCatalogQuery((s) => s.resetFilters);
 
   const favorites = useFavorites((s) => s.favorites);
+  const names = useNames((s) => s.providers);
   const loggedIn = useAuth((s) => s.loggedIn);
   const subscribed = useSubscriptions((s) => s.subscribed);
   const alertsOff = useSubscriptions((s) => s.alertsOff);
@@ -76,20 +78,24 @@ export function Home() {
   }, [tab]);
 
   const listItems = useMemo(
-    () => selectCatalog(providers, { favTab: false, search, filters, sort, favorites, bounds }),
-    [providers, search, filters, sort, favorites, bounds],
+    () => selectCatalog(providers, { favTab: false, search, filters, sort, favorites, names, bounds }),
+    [providers, search, filters, sort, favorites, names, bounds],
   );
   const favItems = useMemo(
-    () => selectCatalog(providers, { favTab: true, search, filters, sort, favorites, bounds }),
-    [providers, search, filters, sort, favorites, bounds],
+    () => selectCatalog(providers, { favTab: true, search, filters, sort, favorites, names, bounds }),
+    [providers, search, filters, sort, favorites, names, bounds],
   );
   const subItems = useMemo(() => {
     if (!loggedIn) return [];
     const query = search.trim().toLowerCase();
     return providers.filter(
-      (p) => subscribed.includes(p.pubkey) && (!query || p.pubkey.toLowerCase().includes(query)),
+      (p) =>
+        subscribed.includes(p.pubkey) &&
+        (!query ||
+          p.pubkey.toLowerCase().includes(query) ||
+          (names[p.pubkey] ?? "").toLowerCase().includes(query)),
     );
-  }, [loggedIn, providers, subscribed, search]);
+  }, [loggedIn, providers, subscribed, search, names]);
 
   const hydrated = useSyncExternalStore(onHydrated, isHydrated);
   const activeFilters = countActiveFilters(filters);

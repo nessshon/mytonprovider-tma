@@ -7,6 +7,7 @@ import { useT } from "@/i18n";
 import { ACCENT } from "@/lib/colors";
 import { shorten } from "@/lib/format";
 import { useFavorites } from "@/stores/favorites";
+import { useNames } from "@/stores/names";
 import { useSubscriptions } from "@/stores/subscriptions";
 import styles from "./ProviderHeader.module.css";
 
@@ -21,13 +22,14 @@ export function ProviderHeader({ pubkey, color, onBack }: ProviderHeaderProps) {
   const isFavorite = useFavorites((s) => s.favorites.includes(pubkey));
   const isSubscribed = useSubscriptions((s) => s.subscribed.includes(pubkey));
   const isAlertOff = useSubscriptions((s) => s.alertsOff.includes(pubkey));
+  const name = useNames((s) => s.providers[pubkey]);
 
   return (
     <ScreenHeader
       title={
         <span className={styles.navTitle}>
           <StatusDot color={color} size={8} />
-          {shorten(pubkey, 14).toUpperCase()}
+          <span className={styles.navName}>{name || shorten(pubkey, 14).toUpperCase()}</span>
           <CopyButton value={pubkey} />
         </span>
       }

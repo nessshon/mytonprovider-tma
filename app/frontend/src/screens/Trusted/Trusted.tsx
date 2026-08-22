@@ -2,6 +2,7 @@ import { Card } from "@/components/Card";
 import { Callout } from "@/components/Callout";
 import { Field } from "@/components/Field";
 import { Icon } from "@/components/Icon/Icon";
+import { NameSheet } from "@/components/NameSheet";
 import { Screen } from "@/components/Screen";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { BADGE_SRC } from "@/components/TrustedBadge";
@@ -11,6 +12,7 @@ import { explorerAddressUrl, parseAddress } from "@/lib/address";
 import { cx } from "@/lib/cx";
 import { shorten } from "@/lib/format";
 import { useSettings } from "@/stores/settings";
+import { useNames } from "@/stores/names";
 import { useTrusted } from "@/stores/trusted";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -23,9 +25,11 @@ export function Trusted() {
   const navigate = useNavigate();
   const explorer = useSettings((s) => s.explorer);
   const addresses = useTrusted((s) => s.addresses);
+  const names = useNames((s) => s.addresses);
 
   const [value, setValue] = useState("");
   const [invalid, setInvalid] = useState<Invalid>("none");
+  const [editing, setEditing] = useState<string | null>(null);
 
   const submit = () => {
     const address = parseAddress(value.trim());
@@ -75,21 +79,31 @@ export function Trusted() {
             {addresses.map((address, index) => (
               <div key={address} className={cx(styles.row, index > 0 && styles.divider)}>
                 <a
-                  className={styles.link}
+                  className={names[address] ? styles.name : styles.link}
                   href={explorerAddressUrl(address, explorer)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  {shorten(address, 14)}
+                  {names[address] || shorten(address, 14)}
                 </a>
-                <button
-                  type="button"
-                  aria-label={t.trustedRemove}
-                  className={styles.remove}
-                  onClick={() => toggleTrusted(address)}
-                >
-                  <Icon glyph="close" size={16} color="var(--ts-danger)" stroke={2} />
-                </button>
+                <span className={styles.actions}>
+                  <button
+                    type="button"
+                    aria-label={t.nameEdit}
+                    className={styles.action}
+                    onClick={() => setEditing(address)}
+                  >
+                    <Icon glyph="edit" size={16} color="var(--ts-hint)" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={t.trustedRemove}
+                    className={styles.action}
+                    onClick={() => toggleTrusted(address)}
+                  >
+                    <Icon glyph="close" size={16} color="var(--ts-danger)" stroke={2} />
+                  </button>
+                </span>
               </div>
             ))}
           </Card>
@@ -98,6 +112,14 @@ export function Trusted() {
             <img className={styles.noteBadge} src={BADGE_SRC} alt="" />
           </div>
         </>
+      )}
+      {editing !== null && (
+        <NameSheet
+          kind="address"
+          target={editing}
+          subtitle={shorten(editing, 14)}
+          onClose={() => setEditing(null)}
+        />
       )}
     </Screen>
   );

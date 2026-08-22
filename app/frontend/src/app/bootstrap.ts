@@ -7,10 +7,11 @@ import { hydrateStores } from "@/lib/storage";
 import { useAlerts } from "@/stores/alerts";
 import { makeAuthUser, useAuth } from "@/stores/auth";
 import { useFavorites } from "@/stores/favorites";
+import { useNames } from "@/stores/names";
 import { useSettings } from "@/stores/settings";
 import { useSubscriptions } from "@/stores/subscriptions";
 
-const PERSISTED_STORES = [useSettings, useFavorites, useSubscriptions, useAlerts, useAuth];
+const PERSISTED_STORES = [useSettings, useFavorites, useNames, useSubscriptions, useAlerts, useAuth];
 
 function applyTelegramLogin(): void {
   const user = getTelegramUser();

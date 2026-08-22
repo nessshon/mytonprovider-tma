@@ -1,4 +1,4 @@
-import { type AlertSettingsPayload, BackendError, backend } from "@/data/backend";
+import { type AlertSettingsPayload, BackendError, type NamesPayload, backend } from "@/data/backend";
 import type { Explorer, Theme } from "@/stores/settings";
 import { ALERT_TYPES, DEFAULT_THRESHOLD, type AlertTypeMap, type ThresholdMap } from "@/data/alerts";
 import { normalizeLang } from "@/i18n";
@@ -8,6 +8,7 @@ import { useAlerts } from "@/stores/alerts";
 import { useAuth } from "@/stores/auth";
 import { useSettings } from "@/stores/settings";
 import { useFavorites } from "@/stores/favorites";
+import { useNames } from "@/stores/names";
 import { useSubscriptions } from "@/stores/subscriptions";
 import { useTrusted } from "@/stores/trusted";
 
@@ -45,6 +46,11 @@ function merge(remote: string[], local: string[]): string[] {
   return [...new Set([...remote, ...local])];
 }
 
+function namesPayload(): NamesPayload {
+  const { providers, addresses } = useNames.getState();
+  return { providers, addresses };
+}
+
 export async function hydrateFromServer(adoptPreferences = false): Promise<void> {
   flushAlerts();
   await chain;
@@ -60,12 +66,20 @@ export async function hydrateFromServer(adoptPreferences = false): Promise<void>
   if (!localStorage.getItem(MIGRATED_KEY)) {
     const favorites = useFavorites.getState().favorites;
     const trusted = useTrusted.getState().addresses;
+    const names = namesPayload();
     if (favorites.length > 0) profile = await backend.putFavorites(merge(profile.favorites, favorites));
     if (trusted.length > 0) profile = await backend.putTrusted(merge(profile.trusted_addresses, trusted));
+    if (Object.keys(names.providers).length > 0 || Object.keys(names.addresses).length > 0) {
+      profile = await backend.putNames({
+        providers: { ...profile.names.providers, ...names.providers },
+        addresses: { ...profile.names.addresses, ...names.addresses },
+      });
+    }
     localStorage.setItem(MIGRATED_KEY, "1");
   }
   useFavorites.getState().setAll(profile.favorites);
   useTrusted.getState().setAll(profile.trusted_addresses);
+  useNames.getState().setAll(profile.names.providers, profile.names.addresses);
   useSubscriptions
     .getState()
     .setAll(profile.subscriptions.map((s) => ({ pubkey: s.pubkey, alertsEnabled: s.alerts_enabled })));
@@ -88,9 +102,23 @@ export function toggleFavorite(pubkey: string): void {
 }
 
 export function toggleTrusted(address: string): void {
-  useTrusted.getState().toggle(toUserFriendly(address));
+  const key = toUserFriendly(address);
+  useTrusted.getState().toggle(key);
   const addresses = useTrusted.getState().addresses;
   queue("trusted sync", () => backend.putTrusted(addresses));
+  if (!addresses.includes(key) && useNames.getState().addresses[key]) setAddressName(key, "");
+}
+
+export function setProviderName(pubkey: string, name: string): void {
+  useNames.getState().setProvider(pubkey, name);
+  const names = namesPayload();
+  queue("names sync", () => backend.putNames(names));
+}
+
+export function setAddressName(address: string, name: string): void {
+  useNames.getState().setAddress(address, name);
+  const names = namesPayload();
+  queue("names sync", () => backend.putNames(names));
 }
 
 export function toggleBell(pubkey: string): void {

@@ -48,6 +48,11 @@ interface SubscriptionEntry {
   alerts_enabled: boolean;
 }
 
+export interface NamesPayload {
+  providers: Record<string, string>;
+  addresses: Record<string, string>;
+}
+
 export interface AlertSettingsPayload {
   enabled: boolean;
   types: string[];
@@ -61,6 +66,7 @@ interface ProfilePayload {
   explorer: Explorer;
   favorites: string[];
   trusted_addresses: string[];
+  names: NamesPayload;
   alerts: AlertSettingsPayload;
   subscriptions: SubscriptionEntry[];
 }
@@ -196,6 +202,8 @@ export const backend = {
       method: "PUT",
       body: JSON.stringify({ trusted_addresses: addresses }),
     }),
+  putNames: (names: NamesPayload) =>
+    request<ProfilePayload>("/api/v1/profile/names", { method: "PUT", body: JSON.stringify(names) }),
   putAlerts: (settings: AlertSettingsPayload) =>
     request<ProfilePayload>("/api/v1/profile/alerts", { method: "PUT", body: JSON.stringify(settings) }),
   subscribe: (pubkey: string, password: string) =>

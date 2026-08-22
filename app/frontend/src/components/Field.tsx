@@ -10,6 +10,7 @@ interface FieldProps {
   placeholder?: string;
   glyph?: GlyphName;
   password?: boolean;
+  maxLength?: number;
   invalid?: boolean;
   enterKeyHint?: "search" | "done";
   onEnter?: () => void;
@@ -23,6 +24,7 @@ export function Field({
   placeholder,
   glyph,
   password,
+  maxLength,
   invalid,
   enterKeyHint,
   onEnter,
@@ -37,6 +39,7 @@ export function Field({
         type={password ? "password" : "text"}
         value={value}
         placeholder={placeholder}
+        maxLength={maxLength}
         enterKeyHint={enterKeyHint}
         autoCapitalize="off"
         autoCorrect="off"

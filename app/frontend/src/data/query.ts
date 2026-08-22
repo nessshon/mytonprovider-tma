@@ -127,14 +127,17 @@ interface CatalogSelection {
   filters: CatalogFilters;
   sort: Sort;
   favorites: string[];
+  names: Record<string, string>;
   bounds: FilterBounds | null;
 }
 
 export function selectCatalog(providers: Provider[], selection: CatalogSelection): Provider[] {
   const search = selection.search.trim().toLowerCase();
+  const found = (p: Provider) =>
+    p.pubkey.toLowerCase().includes(search) || (selection.names[p.pubkey] ?? "").toLowerCase().includes(search);
   const filtered = providers.filter((p) => {
     if (selection.favTab && !selection.favorites.includes(p.pubkey)) return false;
-    if (search && !p.pubkey.toLowerCase().includes(search)) return false;
+    if (search && !found(p)) return false;
     return matchesFilters(p, selection.filters, selection.bounds);
   });
   return sortProviders(filtered, selection.sort);

@@ -266,6 +266,37 @@
   margin-top: 18px;
 }
 
+.nameValue {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nameSet {
+  color: var(--ts-accent);
+}
+
+.nameBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 11px 0;
+  margin: -11px 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 14.5px;
+  color: var(--ts-text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nameBtn:active {
+  opacity: 0.6;
+}
+
 .mono {
   padding: 4px 0;
   background: none;

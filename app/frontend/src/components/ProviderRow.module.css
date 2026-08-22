@@ -28,6 +28,16 @@
   white-space: nowrap;
 }
 
+.name {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ts-value);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .status {
   display: inline-flex;
   align-items: center;

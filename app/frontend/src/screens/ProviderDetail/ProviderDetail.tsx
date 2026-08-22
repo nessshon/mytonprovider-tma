@@ -7,6 +7,7 @@ import { FieldRow } from "@/components/FieldRow";
 import { Icon } from "@/components/Icon/Icon";
 import { MainButton } from "@/components/MainButton";
 import { MetricTile } from "@/components/MetricTile";
+import { NameSheet } from "@/components/NameSheet";
 import { PasswordSheet } from "@/components/PasswordSheet";
 import { ProviderHeader } from "@/components/ProviderHeader";
 import { Screen } from "@/components/Screen";
@@ -25,6 +26,7 @@ import { EMPTY, ago, amount, formatBytes, formatMbits, formatPing, formatPrice, 
 import { describeStatus } from "@/lib/status";
 import { useAuth } from "@/stores/auth";
 import { useCatalog } from "@/stores/catalog";
+import { useNames } from "@/stores/names";
 import { useSubscriptions } from "@/stores/subscriptions";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -102,8 +104,10 @@ export function ProviderDetail() {
   const loggedIn = useAuth((s) => s.loggedIn);
   const { start: startLogin } = useLogin();
   const isSubscribed = useSubscriptions((s) => s.subscribed.includes(pubkey));
+  const name = useNames((s) => s.providers[pubkey]);
 
   const [pwOpen, setPwOpen] = useState(false);
+  const [nameOpen, setNameOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
@@ -138,7 +142,16 @@ export function ProviderDetail() {
   const overview = (
     <>
       <div className={styles.overviewCard}>
-        <CopyRow label={t.publicKey} copyValue={provider.pubkey}>
+        <FieldRow
+          label={t.nameField}
+          value={
+            <button type="button" aria-label={t.nameEdit} className={styles.nameBtn} onClick={() => setNameOpen(true)}>
+              <span className={name ? styles.nameValue : styles.nameSet}>{name || t.nameSet}</span>
+              <Icon glyph="edit" size={16} color="var(--ts-hint)" />
+            </button>
+          }
+        />
+        <CopyRow label={t.publicKey} copyValue={provider.pubkey} divider>
           <span className={cx(styles.mono, styles.monoText)}>{shorten(provider.pubkey, 12)}</span>
         </CopyRow>
         <ExplorerAddressRow label={t.address} address={toUserFriendly(provider.address)} divider />
@@ -251,10 +264,18 @@ export function ProviderDetail() {
         )}
       </Screen>
       {pwOpen && <PasswordSheet pubkey={pubkey} onClose={() => setPwOpen(false)} />}
+      {nameOpen && (
+        <NameSheet
+          kind="provider"
+          target={pubkey}
+          subtitle={shorten(provider.pubkey, 14).toUpperCase()}
+          onClose={() => setNameOpen(false)}
+        />
+      )}
       {confirmOpen && (
         <ConfirmSheet
           title={t.unsubscribeConfirm}
-          subtitle={shorten(provider.pubkey, 14).toUpperCase()}
+          subtitle={name || shorten(provider.pubkey, 14).toUpperCase()}
           confirmLabel={t.unsubscribe}
           onConfirm={() => unsubscribeProvider(pubkey)}
           onClose={() => setConfirmOpen(false)}

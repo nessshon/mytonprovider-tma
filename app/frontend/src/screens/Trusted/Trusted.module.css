@@ -61,7 +61,18 @@
   composes: link from "../../components/ExplorerAddressRow.module.css";
 }
 
-.remove {
+.name {
+  composes: name from "../../components/ExplorerAddressRow.module.css";
+}
+
+.actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.action {
   flex: none;
   display: flex;
   align-items: center;
