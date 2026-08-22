@@ -34,6 +34,7 @@ class UserView(BaseAdminView):
         "explorer",
         LinkTagsField("favorites", url=provider_page, fmt=short_key),
         LinkTagsField("trusted_addresses", url=address_page, fmt=short_address, formatter=WALLETS_FORMATTER),
+        JSONField("names", viewer_collapsed=False, viewer_with_quotes=False),
         TagsField(
             "alert_types",
             formatter=dict.fromkeys(
@@ -55,6 +56,7 @@ class UserView(BaseAdminView):
         "explorer",
         "favorites",
         "trusted_addresses",
+        "names",
         "alert_types",
         "alert_thresholds",
         "banned_by_user",

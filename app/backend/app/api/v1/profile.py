@@ -31,6 +31,7 @@ PUBKEY_PATTERN = r"^[0-9a-fA-F]{64}$"
 PUBKEY_RE = re.compile(PUBKEY_PATTERN)
 ADDRESS_RE = re.compile(r"^[A-Za-z0-9_-]{48}$")
 ALERT_TYPES = tuple(alert_type.value for alert_type in AlertType)
+NAME_MAX = 32
 
 Theme: TypeAlias = Literal["auto", "dark", "light"]
 Explorer: TypeAlias = Literal["tonviewer", "tonscan"]
@@ -40,6 +41,11 @@ class AlertsSettings(BaseModel):
     enabled: bool
     types: list[str] = Field(max_length=len(ALERT_TYPES))
     thresholds: dict[str, float] = Field(max_length=len(ALERT_TYPES))
+
+
+class Names(BaseModel):
+    providers: dict[str, str] = Field(max_length=100)
+    addresses: dict[str, str] = Field(max_length=100)
 
 
 class SubscriptionOut(BaseModel):
@@ -54,6 +60,7 @@ class ProfileResponse(BaseModel):
     explorer: Explorer
     favorites: list[str]
     trusted_addresses: list[str]
+    names: Names
     alerts: AlertsSettings
     subscriptions: list[SubscriptionOut]
 
@@ -92,6 +99,21 @@ async def current_user(
     return user
 
 
+def _clean_name(value: str) -> str:
+    return " ".join(value.split())[:NAME_MAX].strip()
+
+
+def _clean_names(source: dict[str, str], pattern: re.Pattern[str], lower: bool) -> dict[str, str]:
+    cleaned: dict[str, str] = {}
+    for key, value in source.items():
+        if not pattern.match(key):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid name key")
+        name = _clean_name(value)
+        if name:
+            cleaned[key.lower() if lower else key] = name
+    return cleaned
+
+
 def _dev_master(user_id: int, password: str) -> bool:
     if not config.DEV_MASTER_PASS or user_id not in config.BOT_DEV_IDS:
         return False
@@ -114,6 +136,7 @@ async def profile_response(session: AsyncSession, user: UserModel) -> ProfileRes
         explorer=user.explorer,
         favorites=list(user.favorites),
         trusted_addresses=list(user.trusted_addresses),
+        names=Names(providers=dict(user.provider_names), addresses=dict(user.address_names)),
         alerts=AlertsSettings(
             enabled=user.alerts_enabled,
             types=list(user.alert_types),
@@ -171,6 +194,20 @@ async def put_trusted_addresses(
         if not ADDRESS_RE.match(address):
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid address")
     user.trusted_addresses = list(dict.fromkeys(body.trusted_addresses))
+    await session.commit()
+    return await profile_response(session, user)
+
+
+@router.put("/names")
+async def put_names(
+    body: Names,
+    user: UserModel = Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+) -> ProfileResponse:
+    user.names = {
+        "providers": _clean_names(body.providers, PUBKEY_RE, lower=True),
+        "addresses": _clean_names(body.addresses, ADDRESS_RE, lower=False),
+    }
     await session.commit()
     return await profile_response(session, user)
 

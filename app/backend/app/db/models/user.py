@@ -21,6 +21,7 @@ class UserModel(BaseModel):
 
     favorites: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     trusted_addresses: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    names: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     alert_types: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     alert_thresholds: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     alerts_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
@@ -38,6 +39,14 @@ class UserModel(BaseModel):
         lazy="raise",
         viewonly=True,
     )
+
+    @property
+    def provider_names(self) -> dict:
+        return dict(self.names.get("providers", {}))
+
+    @property
+    def address_names(self) -> dict:
+        return dict(self.names.get("addresses", {}))
 
     @property
     def reachable(self) -> bool:
