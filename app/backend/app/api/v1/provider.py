@@ -53,13 +53,13 @@ class SummaryOut(BaseModel):
     earned: int | None
     traffic_in: int | None
     traffic_out: int | None
-    storage_growth_gb: float | None
+    storage_growth_bytes: int | None
 
 
 class AllTimeOut(BaseModel):
     earned: int | None
     traffic: int | None
-    stored_gb: float | None
+    stored_bytes: int | None
 
 
 class ProviderResponse(BaseModel):
@@ -146,15 +146,15 @@ async def period_summary(
 ) -> SummaryOut:
     first, last = await ProviderHistoryRepo(session).bounds(pubkey, start, end)
     if first is None or last is None or first.archived_at == last.archived_at:
-        return SummaryOut(earned=None, traffic_in=None, traffic_out=None, storage_growth_gb=None)
+        return SummaryOut(earned=None, traffic_in=None, traffic_out=None, storage_growth_bytes=None)
     growth = None
     if first.disk_used is not None and last.disk_used is not None:
-        growth = round((last.disk_used - first.disk_used) / 1024**3, 2)
+        growth = last.disk_used - first.disk_used
     return SummaryOut(
         earned=max(0, last.earned - first.earned),
         traffic_in=max(0, last.traffic_in - first.traffic_in),
         traffic_out=max(0, last.traffic_out - first.traffic_out),
-        storage_growth_gb=growth,
+        storage_growth_bytes=growth,
     )
 
 
@@ -191,7 +191,7 @@ async def provider(
         all_time=AllTimeOut(
             earned=row.earned,
             traffic=row.traffic_in + row.traffic_out,
-            stored_gb=round(row.disk_used / 1024**3, 2) if row.disk_used is not None else None,
+            stored_bytes=row.disk_used,
         ),
         problem_bags=problem_bags,
     )

@@ -13,6 +13,9 @@ from app.http.mytonprovider.models import Provider, Telemetry
 from app.utils import utcnow
 from app.workers._base import BaseWorker
 
+BITS_IN_BYTE = 8
+BITS_IN_MBIT = 10**6
+
 logger = logging.getLogger(__name__)
 
 
@@ -84,7 +87,7 @@ def _telemetry_row(provider: Provider, telemetry: Telemetry, prior: ProviderMode
         "cpu_load_percent": _cpu_load_percent(telemetry.cpu_info),
         "ram_load_percent": _ram_load_percent(telemetry.ram),
         "disk_load_percent": _disk_load_percent(telemetry.disks_load_percent, telemetry.storage),
-        "net_mbps": _net_mbps(telemetry.net_load, telemetry.net_recv, telemetry.net_sent),
+        "net_mbps": _net_mbps(telemetry, prior, telemetry_at),
         "disk_used": disk_used,
         "disk_total": disk_total,
         "last_bytes_recv": telemetry.bytes_recv,
@@ -140,19 +143,20 @@ def _ram_load_percent(ram: dict[str, Any] | None) -> float | None:
     return float(usage) if usage is not None else None
 
 
-def _net_mbps(
-    net_load: Sequence[float | None] | None,
-    net_recv: Sequence[float | None] | None,
-    net_sent: Sequence[float | None] | None,
-) -> float | None:
-    load = _first_slot(net_load)
-    if load is not None:
-        return round(load, 2)
-    recv = _first_slot(net_recv)
-    sent = _first_slot(net_sent)
-    if recv is None and sent is None:
+def _net_mbps(telemetry: Telemetry, prior: ProviderModel | None, telemetry_at: datetime | None) -> float | None:
+    if prior is None or telemetry_at is None or prior.telemetry_at is None:
         return None
-    return round((recv or 0) + (sent or 0), 2)
+    seconds = (telemetry_at - prior.telemetry_at).total_seconds()
+    if seconds <= 0:
+        return prior.net_mbps
+    if telemetry.bytes_recv is None or telemetry.bytes_sent is None:
+        return prior.net_mbps
+    if prior.last_bytes_recv is None or prior.last_bytes_sent is None:
+        return prior.net_mbps
+    moved = _positive_delta(telemetry.bytes_recv, prior.last_bytes_recv) + _positive_delta(
+        telemetry.bytes_sent, prior.last_bytes_sent
+    )
+    return round(moved * BITS_IN_BYTE / seconds / BITS_IN_MBIT, 2)
 
 
 def _net_capacity_mbps(telemetry: dict[str, Any] | None) -> float | None:
@@ -161,7 +165,7 @@ def _net_capacity_mbps(telemetry: dict[str, Any] | None) -> float | None:
     download = telemetry.get("speedtest_download")
     if not download:
         return None
-    return round(float(download) / 1024**2, 2)
+    return round(float(download) / BITS_IN_MBIT, 2)
 
 
 def _disk_load_percent(disks: dict[str, Any] | None, storage: dict[str, Any] | None) -> float | None:
