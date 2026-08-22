@@ -1,0 +1,14 @@
+.probe {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  padding: 3px 8px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #7dff9b;
+  font-family: var(--ts-font-mono);
+  font-size: 11px;
+  text-align: center;
+  pointer-events: none;
+}

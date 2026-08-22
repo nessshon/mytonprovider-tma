@@ -1,3 +1,4 @@
+import { LayerProbe, probeEnabled } from "@/components/LayerProbe";
 import { bindBackButton } from "@/lib/telegram";
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { type Location, Routes, useLocation, useNavigate } from "react-router-dom";
@@ -109,6 +110,7 @@ export function LayerStack({ children }: { children: ReactNode }) {
 
   return (
     <LayerContext.Provider value={host}>
+      {probeEnabled() && <LayerProbe dialogs={dialogs.length} layers={liveLayers.length} layered={layered} />}
       <div ref={baseRef} className={styles.base} data-layered={layered ? "" : undefined}>
         <Routes location={entries[0].location}>{children}</Routes>
       </div>
