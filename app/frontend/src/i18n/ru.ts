@@ -49,7 +49,7 @@ export const ru: Dict = {
   uptime: "Доступность",
   rating: "Рейтинг",
   price: "Цена",
-  priceUnit: "200ГБ/мес",
+  priceUnit: "200 GB/мес",
   hardware: "Железо",
   cpuName: "Имя CPU",
   cpuNumber: "Кол-во CPU",
@@ -269,8 +269,4 @@ export const ru: Dict = {
   inFuture: (t: string) => `через ${t}`,
   updatedAgo: (t: string) => `Обновлено ${t} назад`,
   updatedNow: "Обновлено только что",
-  gb: (v: number | string) => `${v} Гб`,
-  mb: (v: number | string) => `${v} Мб`,
-  kb: (v: number | string) => `${v} Кб`,
-  bytes: (n: number) => `${n} ${pluralRu(n, "байт", "байта", "байт")}`,
 };

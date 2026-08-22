@@ -46,7 +46,7 @@ export const en = {
   uptime: "Uptime",
   rating: "Rating",
   price: "Price",
-  priceUnit: "200GB/mo",
+  priceUnit: "200 GB/mo",
   hardware: "Hardware",
   cpuName: "CPU Name",
   cpuNumber: "CPU Number",
@@ -265,8 +265,4 @@ export const en = {
   inFuture: (t: string) => `in ${t}`,
   updatedAgo: (t: string) => `Updated ${t} ago`,
   updatedNow: "Updated just now",
-  gb: (v: number | string) => `${v} Gb`,
-  mb: (v: number | string) => `${v} Mb`,
-  kb: (v: number | string) => `${v} Kb`,
-  bytes: (n: number) => `${n} bytes`,
 };
