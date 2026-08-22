@@ -30,6 +30,25 @@ const EMPTY_FILTERS: CatalogFilters = {
 
 export const PAGE_SIZE = 10;
 
+const START_TAB_KEY = "mtp-start-tab";
+
+function startTab(): Tab {
+  try {
+    const saved = localStorage.getItem(START_TAB_KEY);
+    return saved === "subs" || saved === "fav" ? saved : "list";
+  } catch {
+    return "list";
+  }
+}
+
+export function rememberStartTab(tab: Tab): void {
+  try {
+    localStorage.setItem(START_TAB_KEY, tab);
+  } catch {
+    return;
+  }
+}
+
 type Visible = Record<Tab, number>;
 
 const FIRST_PAGE: Visible = { list: PAGE_SIZE, subs: PAGE_SIZE, fav: PAGE_SIZE };
@@ -49,7 +68,7 @@ interface CatalogQueryState {
 }
 
 export const useCatalogQuery = create<CatalogQueryState>((set) => ({
-  tab: "list",
+  tab: startTab(),
   search: "",
   sort: { field: "rating", dir: "desc" },
   filters: EMPTY_FILTERS,

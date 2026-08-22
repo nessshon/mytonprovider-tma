@@ -2,6 +2,7 @@ import { establishSession } from "@/app/session";
 import { flushAlerts, hydrateFromServer } from "@/data/sync";
 import { invalidateOwner } from "@/hooks/useOwnerData";
 import { useCatalog } from "@/stores/catalog";
+import { type Tab, rememberStartTab } from "@/stores/catalogQuery";
 import { getTelegramUser, initTelegram, isInTelegram } from "@/lib/telegram";
 import { hydrateStores } from "@/lib/storage";
 import { useAlerts } from "@/stores/alerts";
@@ -12,6 +13,20 @@ import { useSettings } from "@/stores/settings";
 import { useSubscriptions } from "@/stores/subscriptions";
 
 const PERSISTED_STORES = [useSettings, useFavorites, useNames, useSubscriptions, useAlerts, useAuth];
+
+function usefulTab(): Tab {
+  if (useAuth.getState().loggedIn && useSubscriptions.getState().subscribed.length > 0) return "subs";
+  if (useFavorites.getState().favorites.length > 0) return "fav";
+  return "list";
+}
+
+function trackStartTab(): void {
+  const save = () => rememberStartTab(usefulTab());
+  save();
+  useAuth.subscribe(save);
+  useFavorites.subscribe(save);
+  useSubscriptions.subscribe(save);
+}
 
 function applyTelegramLogin(): void {
   const user = getTelegramUser();
@@ -42,6 +57,7 @@ async function runBootSequence(): Promise<void> {
   if (isInTelegram()) applyTelegramLogin();
   await hydration;
   if (isInTelegram()) applyTelegramLogin();
+  trackStartTab();
   await establishSession();
 }
 
