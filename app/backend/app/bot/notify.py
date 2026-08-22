@@ -18,30 +18,38 @@ logger = logging.getLogger(__name__)
 
 async def detected(user: UserModel, alert_type: AlertType, pubkey: str, color: AlertColor) -> bool:
     title = t(user.lang, f"alert_detected_{alert_type.value}")
-    return await _deliver(user, render.alert(user.lang, title, pubkey, color))
+    name = user.provider_names.get(pubkey)
+    return await _deliver(user, render.alert(user.lang, title, pubkey, color, name))
 
 
 async def resolved(user: UserModel, alert_type: AlertType, pubkey: str) -> bool:
     title = t(user.lang, f"alert_resolved_{alert_type.value}")
-    return await _deliver(user, render.alert(user.lang, title, pubkey, AlertColor.GREEN))
+    name = user.provider_names.get(pubkey)
+    return await _deliver(user, render.alert(user.lang, title, pubkey, AlertColor.GREEN, name))
 
 
 async def restarted(user: UserModel, service: str, pubkey: str) -> bool:
     title = t(user.lang, "alert_restarted").format(service=service)
-    return await _deliver(user, render.alert(user.lang, title, pubkey, AlertColor.ORANGE))
+    name = user.provider_names.get(pubkey)
+    return await _deliver(user, render.alert(user.lang, title, pubkey, AlertColor.ORANGE, name))
 
 
 async def bags_added(session: AsyncSession, pubkey: str, items: list[render.Bag]) -> None:
     owners = {item.bag_id: user_friendly(item.owner) for item in items if item.owner}
     for user in await _subscribers(session, pubkey, AlertType.BAG_ADDED):
+        name = user.provider_names.get(pubkey)
+        address_names = user.address_names
         for item in items:
-            trusted = owners.get(item.bag_id) in user.trusted_addresses
-            await _deliver(user, render.bag(user.lang, user.explorer, pubkey, item, trusted))
+            owner = owners.get(item.bag_id)
+            trusted = owner in user.trusted_addresses
+            owner_name = address_names.get(owner) if owner else None
+            await _deliver(user, render.bag(user.lang, user.explorer, pubkey, item, trusted, name, owner_name))
 
 
 async def rewards_received(session: AsyncSession, pubkey: str, rewards: list[tuple[int, str]]) -> None:
     for user in await _subscribers(session, pubkey, AlertType.REWARD_RECEIVED):
-        await _deliver(user, render.rewards(user.lang, user.explorer, pubkey, rewards))
+        name = user.provider_names.get(pubkey)
+        await _deliver(user, render.rewards(user.lang, user.explorer, pubkey, rewards, name))
 
 
 async def monthly_report(
@@ -52,7 +60,10 @@ async def monthly_report(
     traffic_in_bytes: int,
     traffic_out_bytes: int,
 ) -> bool:
-    rich_message = render.monthly(user.lang, pubkey, earned_nano, growth_bytes, traffic_in_bytes, traffic_out_bytes)
+    name = user.provider_names.get(pubkey)
+    rich_message = render.monthly(
+        user.lang, pubkey, name, earned_nano, growth_bytes, traffic_in_bytes, traffic_out_bytes
+    )
     return await _deliver_rich(user, rich_message)
 
 
